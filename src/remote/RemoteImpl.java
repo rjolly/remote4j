@@ -15,7 +15,7 @@ class RemoteImpl<T> extends UnicastRemoteObject implements Remote<T> {
 		return Remote.apply(f.apply(value));
 	}
 
-	public <S> Remote<S> flatMap(Function<T, Remote<S>> f) {
+	public <S> Remote<S> flatMap(Function<T, Remote<S>> f) throws RemoteException {
 		return f.apply(value);
 	}
 
