@@ -14,7 +14,7 @@ public interface Remote<T> extends java.rmi.Remote {
   public <S> Remote<S> flatMap(Function<T, Remote<S>> f) throws RemoteException;
   public T get() throws RemoteException;
 
-  public static final Map<java.rmi.Remote, Reference<Object>> cache = new WeakHashMap<>();
+  static final Map<java.rmi.Remote, Reference<Object>> cache = new WeakHashMap<>();
 
   public static <T> Remote<T> apply(T value) throws RemoteException {
 	  final Remote<T> obj = new RemoteImpl<>(value);
