@@ -7,7 +7,7 @@ public class Main {
 		System.out.println(str);
 		System.out.println(str.get());
 		final Remote<Object> obj2 = obj.map(a -> new Object());
-		final Remote<Boolean> c = obj.flatMap(a -> obj2.map(b -> a.equals(b)) );
+		final Remote<Boolean> c = obj.flatMap(a -> obj2.map(b -> a.equals(b)));
 		System.out.println(c);
 		System.out.println(c.get());
 	}

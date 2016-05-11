@@ -80,6 +80,6 @@ public final class RemoteImpl_Stub
     }
 
     public Object readResolve() throws java.io.ObjectStreamException {
-        return Remote.replace(this);
+	return Remote.factory.replace(this);
     }
 }

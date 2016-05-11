@@ -6,7 +6,7 @@
   <groupId>com.github.rjolly</groupId>
   <artifactId>remote4j</artifactId>
   <packaging>jar</packaging>
-  <version>1.0</version>
+  <version>1.1</version>
   <url>http://github.com/rjolly/remote4j/</url>
   <description>Thin functional layer on top of RMI.</description>
   <licenses>

@@ -11,7 +11,7 @@ This project brings orthogonal remote invocation to Java : you can have remote a
 This last statement is meant to bring the remote object locally. It will work for strings and primitive types, but not for non-serializable classes. Likewise, variables captured by closures bound to the remote side will be serialized. Hence, most of the time operations will involve objects on the same side of the gap. Operations involving two or more remote objects are possible, as shown below:
 
 		final Remote<Object> obj2 = obj.map(a -> new Object());
-		final Remote<Boolean> c = obj.flatMap(a -> obj2.map(b -> a.equals(b)) );
+		final Remote<Boolean> c = obj.flatMap(a -> obj2.map(b -> a.equals(b)));
 		System.out.println(c);
 		System.out.println(c.get());
 

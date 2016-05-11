@@ -10,29 +10,45 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 public interface Remote<T> extends java.rmi.Remote {
-  public <S> Remote<S> map(Function<T, S> f) throws RemoteException;
-  public <S> Remote<S> flatMap(Function<T, Remote<S>> f) throws RemoteException;
-  public T get() throws RemoteException;
+	public <S> Remote<S> map(Function<T, S> f) throws RemoteException;
+	public <S> Remote<S> flatMap(Function<T, Remote<S>> f) throws RemoteException;
+	public T get() throws RemoteException;
 
-  static final Map<java.rmi.Remote, Reference<Object>> cache = new WeakHashMap<>();
+	static final Factory factory = new Factory();
 
-  public static <T> Remote<T> apply(T value) throws RemoteException {
-	  final Remote<T> obj = new RemoteImpl<>(value);
-	  cache.put(obj, new WeakReference<>(obj));
-	  return obj;
-  }
+	static class Factory implements RemoteFactory {
+		final Map<java.rmi.Remote, Reference<java.rmi.Remote>> cache = new WeakHashMap<>();
 
-  static <T> Object replace(Remote<T> obj) {
-    final Reference<Object> w = cache.get(obj);
-    return w == null ? obj : w.get();
-  }
+		public <T> Remote<T> apply(T value) throws RemoteException {
+			final Remote<T> obj = new RemoteImpl<>(value);
+			cache.put(obj, new WeakReference<>(obj));
+			return obj;
+		}
 
-  public static <T> void rebind(String name, T value) throws RemoteException, MalformedURLException {
-    Naming.rebind(name, apply(value));
-  }
+		<T> java.rmi.Remote replace(Remote<T> obj) {
+			final Reference<java.rmi.Remote> w = cache.get(obj);
+			return w == null ? obj : w.get();
+		}
 
-  @SuppressWarnings("unchecked")
-  public static <T> Remote<T> lookup(String name) throws MalformedURLException, RemoteException, NotBoundException {
-    return (Remote<T>)Naming.lookup(name);
-  }
+		public <T> void rebind(String name, T value) throws RemoteException, MalformedURLException {
+			Naming.rebind(name, apply(value));
+		}
+
+		@SuppressWarnings("unchecked")
+		public <T> Remote<T> lookup(String name) throws MalformedURLException, RemoteException, NotBoundException {
+			return (Remote<T>)Naming.lookup(name);
+		}
+	}
+
+	public static <T> Remote<T> apply(T value) throws RemoteException {
+		return factory.apply(value);
+	}
+
+	public static <T> void rebind(String name, T value) throws RemoteException, MalformedURLException {
+		factory.rebind(name, value);
+	}
+
+	public static <T> Remote<T> lookup(String name) throws MalformedURLException, RemoteException, NotBoundException {
+		return factory.lookup(name);
+	}
 }

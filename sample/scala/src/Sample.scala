@@ -7,10 +7,10 @@ import scala.collection.convert.WrapAsScala.iterableAsScalaIterable
 
 object Sample extends App {
   implicit val obj = Remote.lookup[Collection[Employee]]("obj")
-  for (employees <- obj) yield {
 
   // Populate
 
+  for (employees <- obj) yield {
   val accounting = Department("Accounting")
   val research = Department("Research")
   val sales = Department("Sales")
@@ -128,9 +128,11 @@ object Sample extends App {
   james.manager = turner
   clark.manager = king
   miller.manager = clark
+  }
 
   // Query
 
+  for (employees <- obj) yield {
   val format = NumberFormat.getCurrencyInstance
 
   val average = Employee("")
