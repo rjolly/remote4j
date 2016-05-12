@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:e="http://ant.apache.org/ivy/extra">
+    <info module="remote4j-websocket-mediator" organisation="com.github.rjolly" revision="1.1"/>
+    <configurations>
+        <conf name="default" extends="runtime,master"/>
+        <conf name="master"/>
+        <conf name="compile"/>
+        <conf name="runtime"/>
+        <conf name="compile-test"/>
+        <conf name="runtime-test"/>
+    </configurations>
+    <dependencies>
+        <dependency org="javax.websocket" name="javax.websocket-api" rev="1.1" conf="compile->master"/>
+        <dependency org="org.glassfish.tyrus" name="tyrus-server" rev="1.12" conf="compile->master"/>
+        <dependency org="org.glassfish.tyrus" name="tyrus-container-grizzly-server" rev="1.12" conf="runtime->default"/>
+    </dependencies>
+</ivy-module>
