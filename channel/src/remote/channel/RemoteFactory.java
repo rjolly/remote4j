@@ -53,7 +53,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 		@Override
 		public void onOpen() {
 			try {
-				channel.send("hello world", "/mediator");
+				channel.send("hello world", "key", "/mediator");
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
