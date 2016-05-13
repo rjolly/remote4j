@@ -4,5 +4,9 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/remote4j"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/remote4j.websocket"/>
+	<classpathentry kind="lib" path="lib/tyrus-client-1.12.jar"/>
+	<classpathentry kind="lib" path="lib/tyrus-container-jdk-client-1.12.jar"/>
+	<classpathentry kind="lib" path="lib/tyrus-core-1.12.jar"/>
+	<classpathentry kind="lib" path="lib/tyrus-spi-1.12.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
