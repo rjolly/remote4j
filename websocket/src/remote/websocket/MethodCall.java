@@ -1,16 +1,20 @@
 package remote.websocket;
 
 import java.io.Serializable;
+import java.security.SecureRandom;
+import java.util.Random;
 
 @SuppressWarnings("serial")
 public class MethodCall implements Serializable {
-	private final long objNum;
-	private final String method;
+	private static final Random random = new SecureRandom();
+	private final long id = random.nextLong();
+	private final long num;
+	private final String name;
 	private final Object args[];
 
-	public MethodCall(final long objNum, final String method, final Object args[]) {
-		this.objNum = objNum;
-		this.method = method;
+	public MethodCall(final long num, final String name, final Object args[]) {
+		this.num = num;
+		this.name = name;
 		this.args = args;
 	}
 }

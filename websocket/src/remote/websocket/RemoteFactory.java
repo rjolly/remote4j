@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.rmi.MarshalledObject;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -32,8 +33,8 @@ public class RemoteFactory implements remote.RemoteFactory {
 		return id;
 	}
 
-	Object invoke(final String id, final long objNum, final String method, final Object args[]) {
-		return new MethodCall(objNum, method, args);
+	Object invoke(final String id, final long objNum, final String method, final Object args[]) throws RemoteException {
+		return invoke(id, new MethodCall(objNum, method, args));
 	}
 
 	public static class Provider implements RemoteFactoryProvider {
@@ -56,17 +57,20 @@ public class RemoteFactory implements remote.RemoteFactory {
 		try {
 			client.connectToServer(new Endpoint(), uri);
 			messageLatch.await(100, TimeUnit.SECONDS);
-			send(id, new MethodCall(0, "println", new Object[] {"Hello!"}));
+			invoke(id, 0, "println", new Object[] {"Hello!"});
 		} catch (final DeploymentException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void send(final String id, final MethodCall message) throws IOException {
+	private Object invoke(final String id, final MethodCall message) throws RemoteException {
 		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
 			System.out.println(id);
 			oos.writeObject(id);
 			oos.writeObject(new MarshalledObject<MethodCall>(message));
+			return null;
+		} catch (final IOException e) {
+			throw new RemoteException(e.toString(), e);
 		}
 	}
 
