@@ -3,9 +3,10 @@ package remote.websocket.mediator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.OutputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
@@ -17,12 +18,19 @@ import javax.websocket.server.ServerEndpoint;
 
 @ServerEndpoint("/mediator")
 public class Endpoint {
-	private final Map<String, Session> map = new HashMap<>();
-	final byte[] buff = new byte[4096];
+	private Map<String, Session> map;
 
 	@OnOpen
-	public void onOpen(final Session session, final EndpointConfig config) {
-		final String id = session.getId();
+	public void onOpen(final Session session, final EndpointConfig config) throws IOException {
+		final Map<String, Object> props = config.getUserProperties();
+		if (!props.containsKey("map")) {
+			props.put("map", new HashMap<>());
+		}
+		map = (Map<String, Session>) props.get("map");
+		final String id = map.isEmpty()?"00000000-0000-0000-0000-000000000000":session.getId();
+		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
+			oos.writeObject(id);
+		}
 		System.out.println("put " + id);
 		map.put(id, session);
 	}
@@ -33,11 +41,9 @@ public class Endpoint {
 			final String id = (String)ois.readObject();
 			System.out.println(id);
 			final Session recipient = map.get(id);
-			try (final OutputStream os = recipient.getBasicRemote().getSendStream()) {
-				int nch;
-				while ((nch = ois.read(buff, 0, buff.length)) != -1) {
-					os.write(buff, 0, nch);
-				}
+			final Object obj = ois.readObject();
+			try (final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream())) {
+				oos.writeObject(obj);
 			}
 		} catch (final ClassNotFoundException e) {
 			e.printStackTrace();
