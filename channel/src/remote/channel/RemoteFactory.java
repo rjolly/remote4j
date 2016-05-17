@@ -2,7 +2,6 @@ package remote.channel;
 
 import java.io.IOException;
 import java.net.URI;
-import java.rmi.NotBoundException;
 
 import remote.Remote;
 import remote.spi.RemoteFactoryProvider;
@@ -38,14 +37,14 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	public <T> Remote<T> apply(final T value) throws IOException {
+	public <T> Remote<T> apply(final T value) {
 		return null;
 	}
 
-	public <T> void rebind(final String name, final T value) throws IOException {
+	public <T> void rebind(final String name, final T value) {
 	}
 
-	public <T> Remote<T> lookup(final String name) throws IOException, NotBoundException {
+	public <T> Remote<T> lookup(final String name) {
 		return null;
 	}
 

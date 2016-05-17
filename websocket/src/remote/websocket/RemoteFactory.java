@@ -6,7 +6,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.rmi.MarshalledObject;
-import java.rmi.NotBoundException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -61,14 +60,14 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	public <T> Remote<T> apply(final T value) throws IOException {
-		return null;
+	public <T> Remote<T> apply(final T value) {
+		return new RemoteImpl<>(value, this);
 	}
 
-	public <T> void rebind(final String name, final T value) throws IOException {
+	public <T> void rebind(final String name, final T value) {
 	}
 
-	public <T> Remote<T> lookup(final String name) throws IOException, NotBoundException {
+	public <T> Remote<T> lookup(final String name) {
 		return null;
 	}
 
