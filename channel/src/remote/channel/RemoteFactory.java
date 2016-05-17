@@ -28,7 +28,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	public RemoteFactory(final URI uri) throws IOException {
+	RemoteFactory(final URI uri) throws IOException {
 		channel = new ChannelAPI(uri.toString(), "key", new Listener());
 		try {
 			channel.open();

@@ -1,5 +1,7 @@
 package remote.websocket;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -7,7 +9,7 @@ import java.util.Random;
 import remote.Function;
 import remote.Remote;
 
-public class RemoteImpl<T> implements Remote<T> {
+public class RemoteImpl<T> implements Remote<T>, Serializable {
 	private static final Random random = new SecureRandom();
 	private final long objNum = random.nextLong();
 	private final RemoteFactory factory;
@@ -31,5 +33,9 @@ public class RemoteImpl<T> implements Remote<T> {
 	@Override
 	public T get() {
 		return value;
+	}
+
+	private Object writeReplace() throws ObjectStreamException {
+		return new RemoteImpl_Stub<>(factory.getId(), objNum);
 	}
 }

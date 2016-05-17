@@ -26,6 +26,14 @@ public class RemoteFactory implements remote.RemoteFactory {
 	private Session session;
 	private String id;
 
+	String getId() {
+		return id;
+	}
+
+	Object invoke(final String id, final long objNum, final String method, final Object args[]) {
+		return new MethodCall(objNum, method, args);
+	}
+
 	public static class Provider implements RemoteFactoryProvider {
 		private final String schemes[] = new String[] {"ws", "wss"};
 
@@ -42,21 +50,21 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	public RemoteFactory(final URI uri) throws IOException {
+	RemoteFactory(final URI uri) throws IOException {
 		try {
 			client.connectToServer(new Endpoint(), uri);
 			messageLatch.await(100, TimeUnit.SECONDS);
-			send("Hello!");
+			send(id, new MethodCall(0, "println", new Object[] {"Hello!"}));
 		} catch (final DeploymentException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void send(final String message) throws IOException {
+	private void send(final String id, final MethodCall message) throws IOException {
 		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
 			System.out.println(id);
 			oos.writeObject(id);
-			oos.writeObject(new MarshalledObject<String>(message));
+			oos.writeObject(new MarshalledObject<MethodCall>(message));
 		}
 	}
 
@@ -87,7 +95,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 					messageLatch.countDown();
 				} else {
 					@SuppressWarnings("unchecked")
-					final MarshalledObject<String> obj = (MarshalledObject<String>) ois.readObject();
+					final MarshalledObject<MethodCall> obj = (MarshalledObject<MethodCall>) ois.readObject();
 					System.out.println(String.format("%s %s", "Received message: ", obj.get()));
 				}
 			} catch (final ClassNotFoundException e) {
