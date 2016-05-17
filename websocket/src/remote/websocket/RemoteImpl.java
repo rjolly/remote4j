@@ -15,6 +15,10 @@ public class RemoteImpl<T> implements Remote<T>, Serializable {
 	private final RemoteFactory factory;
 	private final T value;
 
+	long getObjNum() {
+		return objNum;
+	}
+
 	RemoteImpl(final T value, final RemoteFactory factory) {
 		this.factory = factory;
 		this.value = value;

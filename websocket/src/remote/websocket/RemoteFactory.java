@@ -1,11 +1,12 @@
 package remote.websocket;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.rmi.MarshalledObject;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +24,7 @@ import remote.spi.RemoteFactoryProvider;
 public class RemoteFactory implements remote.RemoteFactory {
 	private final WebSocketContainer client = ContainerProvider.getWebSocketContainer();
 	private final CountDownLatch messageLatch = new CountDownLatch(1);
+	private final Map<Long, Remote<?>> cache = new HashMap<>();
 	private Session session;
 	private String id;
 
@@ -69,7 +71,14 @@ public class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	public <T> Remote<T> apply(final T value) {
-		return new RemoteImpl<>(value, this);
+		final RemoteImpl<T> obj = new RemoteImpl<>(value, this);
+		cache.put(obj.getObjNum(), obj);
+		return obj;
+	}
+
+	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
+		final long num = obj.getObjNum();
+		return cache.containsKey(num) ? cache.get(num) : obj;
 	}
 
 	public <T> void rebind(final String name, final T value) {
@@ -88,8 +97,8 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 
 		@OnMessage
-		public void onMessage(final InputStream is) throws IOException {
-			try (final ObjectInputStream ois = new ObjectInputStream(is)) {
+		public void onMessage(final java.io.InputStream is) throws IOException {
+			try (final ObjectInputStream ois = new InputStream(is, RemoteFactory.this)) {
 				if (id == null) {
 					id = (String) ois.readObject();
 					messageLatch.countDown();

@@ -15,6 +15,10 @@ public class RemoteImpl_Stub<T> implements Remote<T>, Serializable {
 	private final long objNum;
 	private final String id;
 
+	long getObjNum() {
+		return objNum;
+	}
+
 	public RemoteImpl_Stub(final String id, final long objNum) {
 		this.objNum = objNum;
 		this.id = id;
@@ -36,12 +40,12 @@ public class RemoteImpl_Stub<T> implements Remote<T>, Serializable {
 		return null;
 	}
 
-	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+	private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
 		in.defaultReadObject();
 		factory = ((InputStream) in).getFactory();
 	}
 
 	private Object readResolve() throws ObjectStreamException {
-		return null;
+		return factory.replace(this);
 	}
 }
