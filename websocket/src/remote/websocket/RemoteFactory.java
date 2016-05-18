@@ -103,8 +103,9 @@ public class RemoteFactory implements remote.RemoteFactory {
 		@OnMessage
 		public void onMessage(final java.io.InputStream is) throws IOException {
 			try (final ObjectInputStream ois = new InputStream(is, RemoteFactory.this)) {
+				final String senderId = (String) ois.readObject();
 				if (id == null) {
-					id = (String) ois.readObject();
+					id = senderId;
 					messageLatch.countDown();
 				} else {
 					@SuppressWarnings("unchecked")
