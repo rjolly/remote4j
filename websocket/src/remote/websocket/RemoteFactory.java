@@ -1,12 +1,13 @@
 package remote.websocket;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.rmi.MarshalledObject;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
+import remote.Function;
 import remote.Remote;
 import remote.spi.RemoteFactoryProvider;
 
@@ -41,17 +43,12 @@ public class RemoteFactory implements remote.RemoteFactory {
 		final MethodCall call = new MethodCall(objNum, method, types, args);
 		send(id, call);
 		latches.put(call.getId(), new CountDownLatch(1));
-		boolean success = false;
 		try {
-			success = latches.get(call.getId()).await(100, TimeUnit.SECONDS);
+			latches.get(call.getId()).await(100, TimeUnit.SECONDS);
 		} catch (final InterruptedException e) {
 			e.printStackTrace();
 		}
-		if (success) {
-			return returns.get(call.getId());
-		} else {
-			throw new RemoteException("failed");
-		}
+		return returns.get(call.getId());
 	}
 
 	public static class Provider implements RemoteFactoryProvider {
@@ -71,29 +68,42 @@ public class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	RemoteFactory(final URI uri) throws IOException {
-		boolean success = false;
 		try {
 			client.connectToServer(new Endpoint(), uri);
-			success = messageLatch.await(100, TimeUnit.SECONDS);
+			messageLatch.await(100, TimeUnit.SECONDS);
 		} catch (final DeploymentException | InterruptedException e) {
 			e.printStackTrace();
 		}
-		if (success) {
-			apply("Hello!");
-			final Object obj = invoke(id, cache.keySet().iterator().next(), "get", new Class<?>[] {}, new Object[] {});
-			System.out.println(obj);
-		} else {
-			throw new RemoteException("failed");
-		}
+		apply(new Object());
+		final Object obj = invoke(id, cache.keySet().iterator().next(), "map", new Class<?>[] {Function.class}, new Object[] {(Function<Object, String>)(x -> "Hello!")});
+		System.out.println(((Remote<?>)obj).get());
 	}
 
 	private <T> void send(final String id, final T message) throws RemoteException {
 		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
 			oos.writeObject(id);
-			oos.writeObject(new MarshalledObject<T>(message));
+			oos.writeObject(marshall(message));
 		} catch (final IOException e) {
 			throw new RemoteException(null, e);
 		}
+	}
+
+	private byte[] marshall(final Object obj) throws IOException {
+		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try (final ObjectOutputStream oos = new ObjectOutputStream(os)) {
+			oos.writeObject(obj);
+		}
+		return os.toByteArray();
+	}
+
+	private Object unmarshall(final byte array[]) throws IOException {
+		Object obj = null;
+		try (final ObjectInputStream ois = new InputStream(new ByteArrayInputStream(array), this)) {
+			obj = ois.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return obj;
 	}
 
 	public <T> Remote<T> apply(final T value) {
@@ -124,16 +134,14 @@ public class RemoteFactory implements remote.RemoteFactory {
 
 		@OnMessage
 		public void onMessage(final java.io.InputStream is) throws IOException {
-			try (final ObjectInputStream ois = new InputStream(is, RemoteFactory.this)) {
+			try (final ObjectInputStream ois = new ObjectInputStream(is)) {
 				final String senderId = (String) ois.readObject();
 				System.out.println(senderId);
 				if (id == null) {
 					id = senderId;
 					messageLatch.countDown();
 				} else {
-					@SuppressWarnings("rawtypes")
-					final MarshalledObject mobj = (MarshalledObject) ois.readObject();
-					final Object obj = mobj.get();
+					final Object obj = unmarshall((byte[]) ois.readObject());
 					System.out.println(String.format("%s %s", "Received message: ", obj));
 					if (obj instanceof MethodCall) {
 						final MethodCall call = (MethodCall) obj;
