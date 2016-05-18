@@ -27,17 +27,19 @@ public class RemoteImpl_Stub<T> implements Remote<T>, Serializable {
 	@Override
 	@SuppressWarnings("unchecked")
 	public <S> Remote<S> map(Function<T, S> f) throws RemoteException {
-		return (Remote<S>) factory.invoke(id, objNum, "map", new Object[] {f});
+		return (Remote<S>) factory.invoke(id, objNum, "map", new Class<?>[] {Function.class}, new Object[] {f});
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public <S> Remote<S> flatMap(Function<T, Remote<S>> f) throws RemoteException {
-		return null;
+		return (Remote<S>) factory.invoke(id, objNum, "flatMap", new Class<?>[] {Function.class}, new Object[] {f});
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public T get() throws RemoteException {
-		return null;
+		return (T) factory.invoke(id, objNum, "get", new Class<?>[] {}, new Object[] {});
 	}
 
 	private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {

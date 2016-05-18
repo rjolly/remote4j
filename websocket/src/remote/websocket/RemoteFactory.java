@@ -3,6 +3,8 @@ package remote.websocket;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.rmi.MarshalledObject;
 import java.rmi.RemoteException;
@@ -25,6 +27,8 @@ import remote.spi.RemoteFactoryProvider;
 public class RemoteFactory implements remote.RemoteFactory {
 	private final WebSocketContainer client = ContainerProvider.getWebSocketContainer();
 	private final CountDownLatch messageLatch = new CountDownLatch(1);
+	private final Map<Long, CountDownLatch> latches = new HashMap<>();
+	private final Map<Long, Object> returns = new HashMap<>();
 	private final Map<Long, Remote<?>> cache = new HashMap<>();
 	private Session session;
 	private String id;
@@ -33,8 +37,21 @@ public class RemoteFactory implements remote.RemoteFactory {
 		return id;
 	}
 
-	Object invoke(final String id, final long objNum, final String method, final Object args[]) throws RemoteException {
-		return invoke(id, new MethodCall(objNum, method, args));
+	Object invoke(final String id, final long objNum, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
+		final MethodCall call = new MethodCall(objNum, method, types, args);
+		send(id, call);
+		latches.put(call.getId(), new CountDownLatch(1));
+		boolean success = false;
+		try {
+			success = latches.get(call.getId()).await(100, TimeUnit.SECONDS);
+		} catch (final InterruptedException e) {
+			e.printStackTrace();
+		}
+		if (success) {
+			return returns.get(call.getId());
+		} else {
+			throw new RemoteException("failed");
+		}
 	}
 
 	public static class Provider implements RemoteFactoryProvider {
@@ -54,23 +71,28 @@ public class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	RemoteFactory(final URI uri) throws IOException {
+		boolean success = false;
 		try {
 			client.connectToServer(new Endpoint(), uri);
-			messageLatch.await(100, TimeUnit.SECONDS);
-			invoke(id, 0, "println", new Object[] {"Hello!"});
+			success = messageLatch.await(100, TimeUnit.SECONDS);
 		} catch (final DeploymentException | InterruptedException e) {
 			e.printStackTrace();
 		}
+		if (success) {
+			apply("Hello!");
+			final Object obj = invoke(id, cache.keySet().iterator().next(), "get", new Class<?>[] {}, new Object[] {});
+			System.out.println(obj);
+		} else {
+			throw new RemoteException("failed");
+		}
 	}
 
-	private Object invoke(final String id, final MethodCall message) throws RemoteException {
+	private <T> void send(final String id, final T message) throws RemoteException {
 		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
-			System.out.println(id);
 			oos.writeObject(id);
-			oos.writeObject(new MarshalledObject<MethodCall>(message));
-			return null;
+			oos.writeObject(new MarshalledObject<T>(message));
 		} catch (final IOException e) {
-			throw new RemoteException(e.toString(), e);
+			throw new RemoteException(null, e);
 		}
 	}
 
@@ -104,15 +126,29 @@ public class RemoteFactory implements remote.RemoteFactory {
 		public void onMessage(final java.io.InputStream is) throws IOException {
 			try (final ObjectInputStream ois = new InputStream(is, RemoteFactory.this)) {
 				final String senderId = (String) ois.readObject();
+				System.out.println(senderId);
 				if (id == null) {
 					id = senderId;
 					messageLatch.countDown();
 				} else {
-					@SuppressWarnings("unchecked")
-					final MarshalledObject<MethodCall> obj = (MarshalledObject<MethodCall>) ois.readObject();
-					System.out.println(String.format("%s %s", "Received message: ", obj.get()));
+					@SuppressWarnings("rawtypes")
+					final MarshalledObject mobj = (MarshalledObject) ois.readObject();
+					final Object obj = mobj.get();
+					System.out.println(String.format("%s %s", "Received message: ", obj));
+					if (obj instanceof MethodCall) {
+						final MethodCall call = (MethodCall) obj;
+						final Remote<?> target = cache.get(call.getNum());
+						final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
+						final Object value = method.invoke(target, call.getArgs());
+						send(senderId, new Return(value, call.getId()));
+					} else if (obj instanceof Return) {
+						final Return ret = (Return) obj;
+						final long relatesTo = ret.getRelatesTo();
+						returns.put(relatesTo, ret.getValue());
+						latches.get(relatesTo).countDown();
+					}
 				}
-			} catch (final ClassNotFoundException e) {
+			} catch (final ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				e.printStackTrace();
 			}
 		}

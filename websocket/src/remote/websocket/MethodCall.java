@@ -11,10 +11,32 @@ public class MethodCall implements Serializable {
 	private final long num;
 	private final String name;
 	private final Object args[];
+	private final Class<?> types[];
 
-	public MethodCall(final long num, final String name, final Object args[]) {
+	long getId() {
+		return id;
+	}
+
+	long getNum() {
+		return num;
+	}
+
+	String getName() {
+		return name;
+	}
+
+	Class<?>[] getTypes() {
+		return types;
+	}
+
+	Object[] getArgs() {
+		return args;
+	}
+
+	public MethodCall(final long num, final String name, final Class<?> types[], final Object args[]) {
 		this.num = num;
 		this.name = name;
+		this.types = types;
 		this.args = args;
 	}
 }

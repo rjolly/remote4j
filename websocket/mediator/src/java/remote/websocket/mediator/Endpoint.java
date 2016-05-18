@@ -19,7 +19,7 @@ import javax.websocket.server.ServerEndpoint;
 @ServerEndpoint("/mediator")
 public class Endpoint {
 	private Map<String, Session> map;
-	private boolean registry;
+	private String id;
 
 	@OnOpen
 	public void onOpen(final Session session, final EndpointConfig config) throws IOException {
@@ -28,8 +28,7 @@ public class Endpoint {
 			props.put("map", new HashMap<>());
 		}
 		map = (Map<String, Session>) props.get("map");
-		registry = map.isEmpty();
-		final String id = registry?"00000000-0000-0000-0000-000000000000":session.getId();
+		id = map.isEmpty()?"00000000-0000-0000-0000-000000000000":session.getId();
 		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
 			oos.writeObject(id);
 		}
@@ -38,14 +37,14 @@ public class Endpoint {
 	}
 
 	@OnMessage
-	public void onMessage(final InputStream is, final Session session) throws IOException {
+	public void onMessage(final InputStream is) throws IOException {
 		try (final ObjectInputStream ois = new ObjectInputStream(is)) {
-			final String id = (String)ois.readObject();
-			System.out.println(id);
-			final Session recipient = map.get(id);
+			final String recipientId = (String)ois.readObject();
+			System.out.println(recipientId);
+			final Session recipient = map.get(recipientId);
 			final Object obj = ois.readObject();
 			try (final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream())) {
-				oos.writeObject(session.getId());
+				oos.writeObject(id);
 				oos.writeObject(obj);
 			}
 		} catch (final ClassNotFoundException e) {
@@ -54,12 +53,12 @@ public class Endpoint {
 	}
 
 	@OnClose
-	public void onClose(final Session session, final CloseReason reason) {
-		map.remove(registry?"00000000-0000-0000-0000-000000000000":session.getId());
+	public void onClose(final CloseReason reason) {
+		map.remove(id);
 	}
 
 	@OnError
-	public void onError(final Session session, final Throwable t) {
+	public void onError(final Throwable t) {
 		t.printStackTrace();
 	}
 }
