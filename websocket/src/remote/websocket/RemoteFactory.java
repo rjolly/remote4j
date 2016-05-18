@@ -22,7 +22,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
-import remote.Function;
+import remote.Naming;
 import remote.Remote;
 import remote.spi.RemoteFactoryProvider;
 
@@ -74,9 +74,9 @@ public class RemoteFactory implements remote.RemoteFactory {
 		} catch (final DeploymentException | InterruptedException e) {
 			e.printStackTrace();
 		}
-		apply(new Object());
-		final Object obj = invoke(id, cache.keySet().iterator().next(), "map", new Class<?>[] {Function.class}, new Object[] {(Function<Object, String>)(x -> "Hello!")});
-		System.out.println(((Remote<?>)obj).get());
+		rebind("obj", new Object());
+		final Remote<Object> obj = lookup("obj");
+		System.out.println(obj.map(x -> "Hello!").get());
 	}
 
 	private <T> void send(final String id, final T message) throws RemoteException {
@@ -108,20 +108,25 @@ public class RemoteFactory implements remote.RemoteFactory {
 
 	public <T> Remote<T> apply(final T value) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this);
-		cache.put(obj.getObjNum(), obj);
+		cache.put(obj.getNum(), obj);
 		return obj;
 	}
 
 	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
-		final long num = obj.getObjNum();
+		final long num = obj.getNum();
 		return cache.containsKey(num) ? cache.get(num) : obj;
 	}
 
-	public <T> void rebind(final String name, final T value) {
+	public <T> void rebind(final String name, final T value) throws RemoteException {
+		final Remote<T> obj = apply(value);
+		new RemoteImpl_Stub<Naming>("00000000-0000-0000-0000-000000000000", RemoteObject.registry, this).map(a -> {
+			a.rebind(name, obj);
+			return null;
+		});
 	}
 
-	public <T> Remote<T> lookup(final String name) {
-		return null;
+	public <T> Remote<T> lookup(final String name) throws RemoteException {
+		return new RemoteImpl_Stub<Naming>("00000000-0000-0000-0000-000000000000", RemoteObject.registry, this).map(a -> a.lookup(name));
 	}
 
 	@ClientEndpoint
@@ -139,6 +144,9 @@ public class RemoteFactory implements remote.RemoteFactory {
 				System.out.println(senderId);
 				if (id == null) {
 					id = senderId;
+					if ("00000000-0000-0000-0000-000000000000".equals(id)) {
+						cache.put(RemoteObject.registry, new RemoteImpl<Naming>(new Naming(), RemoteFactory.this, RemoteObject.registry));
+					}
 					messageLatch.countDown();
 				} else {
 					final Object obj = unmarshall((byte[]) ois.readObject());

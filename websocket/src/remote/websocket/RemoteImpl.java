@@ -9,17 +9,17 @@ import java.util.Random;
 import remote.Function;
 import remote.Remote;
 
-public class RemoteImpl<T> implements Remote<T>, Serializable {
+public class RemoteImpl<T> extends RemoteObject implements Remote<T>, Serializable {
 	private static final Random random = new SecureRandom();
-	private final long objNum = random.nextLong();
 	private final RemoteFactory factory;
 	private final T value;
 
-	long getObjNum() {
-		return objNum;
+	RemoteImpl(final T value, final RemoteFactory factory) {
+		this(value, factory, random.nextLong());
 	}
 
-	RemoteImpl(final T value, final RemoteFactory factory) {
+	RemoteImpl(final T value, final RemoteFactory factory, final long num) {
+		super(num);
 		this.factory = factory;
 		this.value = value;
 	}
@@ -40,6 +40,6 @@ public class RemoteImpl<T> implements Remote<T>, Serializable {
 	}
 
 	private Object writeReplace() throws ObjectStreamException {
-		return new RemoteImpl_Stub<>(factory.getId(), objNum);
+		return new RemoteImpl_Stub<>(factory.getId(), getNum());
 	}
 }

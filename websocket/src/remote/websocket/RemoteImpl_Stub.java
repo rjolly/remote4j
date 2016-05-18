@@ -10,36 +10,36 @@ import remote.Function;
 import remote.Remote;
 
 @SuppressWarnings("serial")
-public class RemoteImpl_Stub<T> implements Remote<T>, Serializable {
+public class RemoteImpl_Stub<T> extends RemoteObject implements Remote<T>, Serializable {
 	private transient RemoteFactory factory;
-	private final long objNum;
 	private final String id;
 
-	long getObjNum() {
-		return objNum;
+	public RemoteImpl_Stub(final String id, final long num) {
+		this(id, num, null);
 	}
 
-	public RemoteImpl_Stub(final String id, final long objNum) {
-		this.objNum = objNum;
+	public RemoteImpl_Stub(final String id, final long num, final RemoteFactory factory) {
+		super(num);
 		this.id = id;
+		this.factory = factory;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public <S> Remote<S> map(Function<T, S> f) throws RemoteException {
-		return (Remote<S>) factory.invoke(id, objNum, "map", new Class<?>[] {Function.class}, new Object[] {f});
+		return (Remote<S>) factory.invoke(id, getNum(), "map", new Class<?>[] {Function.class}, new Object[] {f});
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public <S> Remote<S> flatMap(Function<T, Remote<S>> f) throws RemoteException {
-		return (Remote<S>) factory.invoke(id, objNum, "flatMap", new Class<?>[] {Function.class}, new Object[] {f});
+		return (Remote<S>) factory.invoke(id, getNum(), "flatMap", new Class<?>[] {Function.class}, new Object[] {f});
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public T get() throws RemoteException {
-		return (T) factory.invoke(id, objNum, "get", new Class<?>[] {}, new Object[] {});
+		return (T) factory.invoke(id, getNum(), "get", new Class<?>[] {}, new Object[] {});
 	}
 
 	private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
