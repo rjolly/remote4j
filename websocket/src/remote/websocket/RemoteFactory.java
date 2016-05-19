@@ -69,9 +69,6 @@ public class RemoteFactory implements remote.RemoteFactory {
 		} catch (final DeploymentException | InterruptedException e) {
 			e.printStackTrace();
 		}
-		rebind("obj", new Object());
-		final Remote<Object> obj = lookup("obj");
-		System.out.println(obj.map(x -> "Hello!").get());
 	}
 
 	private <T> void send(final String id, final T message) throws RemoteException {
