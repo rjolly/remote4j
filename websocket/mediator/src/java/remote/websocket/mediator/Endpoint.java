@@ -41,10 +41,9 @@ public class Endpoint {
 			final String recipientId = (String)ois.readObject();
 			final Session recipient = map.get(recipientId);
 			final Object obj = ois.readObject();
-			try (final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream())) {
-				oos.writeObject(id);
-				oos.writeObject(obj);
-			}
+			final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream());
+			oos.writeObject(id);
+			oos.writeObject(obj);
 		} catch (final ClassNotFoundException e) {
 			e.printStackTrace();
 		}

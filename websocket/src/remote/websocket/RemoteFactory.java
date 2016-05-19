@@ -77,7 +77,8 @@ public class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	private <T> void send(final String id, final T message) throws RemoteException {
-		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
+		try {
+			final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
 			oos.writeObject(id);
 			oos.writeObject(marshall(message));
 		} catch (final IOException e) {
