@@ -23,6 +23,8 @@ import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
 import remote.Remote;
+import remote.server.MethodCall;
+import remote.server.Return;
 import remote.spi.RemoteFactoryProvider;
 
 public class RemoteFactory implements remote.RemoteFactory {

@@ -1,4 +1,4 @@
-package remote.websocket;
+package remote.server;
 
 import java.io.Serializable;
 
@@ -7,11 +7,11 @@ public class Return implements Serializable {
 	private final Object value;
 	private final long relatesTo;
 
-	Object getValue() {
+	public Object getValue() {
 		return value;
 	}
 
-	long getRelatesTo() {
+	public long getRelatesTo() {
 		return relatesTo;
 	}
 

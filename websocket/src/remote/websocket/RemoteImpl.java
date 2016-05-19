@@ -8,6 +8,7 @@ import java.util.Random;
 
 import remote.Function;
 import remote.Remote;
+import remote.server.RemoteObject;
 
 public class RemoteImpl<T> extends RemoteObject implements Remote<T>, Serializable {
 	private static final Random random = new SecureRandom();

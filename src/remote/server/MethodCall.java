@@ -1,4 +1,4 @@
-package remote.websocket;
+package remote.server;
 
 import java.io.Serializable;
 import java.security.SecureRandom;
@@ -14,23 +14,23 @@ public class MethodCall implements Serializable {
 	private final Object args[];
 	private final Class<?> types[];
 
-	long getId() {
+	public long getId() {
 		return id;
 	}
 
-	long getNum() {
+	public long getNum() {
 		return num;
 	}
 
-	String getName() {
+	public String getName() {
 		return name;
 	}
 
-	Class<?>[] getTypes() {
+	public Class<?>[] getTypes() {
 		return types;
 	}
 
-	Object[] getArgs() {
+	public Object[] getArgs() {
 		return args;
 	}
 

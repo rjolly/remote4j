@@ -1,4 +1,4 @@
-package remote.websocket;
+package remote.server;
 
 import java.io.Serializable;
 
@@ -10,7 +10,7 @@ public class RemoteObject implements Serializable {
 		this.num = num;
 	}
 
-	long getNum() {
+	public long getNum() {
 		return num;
 	}
 

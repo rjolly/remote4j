@@ -8,6 +8,7 @@ import java.rmi.RemoteException;
 
 import remote.Function;
 import remote.Remote;
+import remote.server.RemoteObject;
 
 @SuppressWarnings("serial")
 public class RemoteImpl_Stub<T> extends RemoteObject implements Remote<T>, Serializable {
