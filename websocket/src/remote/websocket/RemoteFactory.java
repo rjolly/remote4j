@@ -111,12 +111,12 @@ public class RemoteFactory implements remote.RemoteFactory {
 	void setId(final String id) {
 		this.id = id;
 		if ("00000000-0000-0000-0000-000000000000".equals(id)) {
-			final RemoteImpl<Map<String, Object>> obj = new RemoteImpl<>(new HashMap<>(), this, 0);
+			final RemoteImpl<Map<String, Remote<?>>> obj = new RemoteImpl<>(new HashMap<>(), this, 0);
 			cache.put(obj.getNum(), obj);
 		}
 	}
 
-	final Remote<Map<String, Object>> registry = new RemoteImpl_Stub<>("00000000-0000-0000-0000-000000000000", 0, this);
+	final Remote<Map<String, Remote<?>>> registry = new RemoteImpl_Stub<>("00000000-0000-0000-0000-000000000000", 0, this);
 
 	public <T> Remote<T> apply(final T value) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this);
