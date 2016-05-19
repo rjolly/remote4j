@@ -50,4 +50,9 @@ public class RemoteImpl_Stub<T> extends RemoteObject implements Remote<T>, Seria
 	private Object readResolve() throws ObjectStreamException {
 		return factory.replace(this);
 	}
+
+	@Override
+	public String toString() {
+		return id + ":" + super.toString();
+	}
 }

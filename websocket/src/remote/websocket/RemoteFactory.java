@@ -46,6 +46,11 @@ public class RemoteFactory implements remote.RemoteFactory {
 		return returns.get(call.getId());
 	}
 
+	void rtrn(final String id, final Object value, final long relatesTo) throws RemoteException {
+		final Return ret = new Return(value, relatesTo);
+		send(id, ret);
+	}
+
 	public static class Provider implements RemoteFactoryProvider {
 		private final String schemes[] = new String[] {"ws", "wss"};
 
@@ -130,7 +135,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 
 	@SuppressWarnings("unchecked")
 	public <T> Remote<T> lookup(final String name) throws RemoteException {
-		return registry.map(a -> (T) a.get(name));
+		return registry.flatMap(a -> (Remote<T>) a.get(name));
 	}
 
 	@ClientEndpoint
@@ -145,19 +150,17 @@ public class RemoteFactory implements remote.RemoteFactory {
 		public void onMessage(final java.io.InputStream is) throws IOException {
 			try (final ObjectInputStream ois = new ObjectInputStream(is)) {
 				final String senderId = (String) ois.readObject();
-				System.out.println(senderId);
 				if (getId() == null) {
 					setId(senderId);
 					messageLatch.countDown();
 				} else {
 					final Object obj = unmarshall((byte[]) ois.readObject());
-					System.out.println(String.format("%s %s", "Received message: ", obj));
 					if (obj instanceof MethodCall) {
 						final MethodCall call = (MethodCall) obj;
 						final Remote<?> target = cache.get(call.getNum());
 						final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
 						final Object value = method.invoke(target, call.getArgs());
-						send(senderId, new Return(value, call.getId()));
+						rtrn(senderId, value, call.getId());
 					} else if (obj instanceof Return) {
 						final Return ret = (Return) obj;
 						final long relatesTo = ret.getRelatesTo();

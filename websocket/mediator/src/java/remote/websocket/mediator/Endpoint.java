@@ -32,7 +32,6 @@ public class Endpoint {
 		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
 			oos.writeObject(id);
 		}
-		System.out.println("put " + id);
 		map.put(id, session);
 	}
 
@@ -40,7 +39,6 @@ public class Endpoint {
 	public void onMessage(final InputStream is) throws IOException {
 		try (final ObjectInputStream ois = new ObjectInputStream(is)) {
 			final String recipientId = (String)ois.readObject();
-			System.out.println(recipientId);
 			final Session recipient = map.get(recipientId);
 			final Object obj = ois.readObject();
 			try (final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream())) {

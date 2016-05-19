@@ -2,6 +2,7 @@ package remote.websocket;
 
 import java.io.Serializable;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Random;
 
 @SuppressWarnings("serial")
@@ -38,5 +39,10 @@ public class MethodCall implements Serializable {
 		this.name = name;
 		this.types = types;
 		this.args = args;
+	}
+
+	@Override
+	public String toString() {
+		return Long.toString(id) + " = " + Long.toString(num) + "." + name + Arrays.asList(args);
 	}
 }

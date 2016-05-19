@@ -13,4 +13,9 @@ public class RemoteObject implements Serializable {
 	long getNum() {
 		return num;
 	}
+
+	@Override
+	public String toString() {
+		return Long.toString(num);
+	}
 }

@@ -19,4 +19,9 @@ public class Return implements Serializable {
 		this.relatesTo = relatesTo;
 		this.value = value;
 	}
+
+	@Override
+	public String toString() {
+		return Long.toString(relatesTo) + " = " + value;
+	}
 }
