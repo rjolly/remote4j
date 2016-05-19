@@ -17,7 +17,7 @@ public interface Remote<T> extends java.rmi.Remote {
 	static final Factory factory = new Factory();
 
 	static class Factory implements RemoteFactory {
-		final Map<java.rmi.Remote, Reference<java.rmi.Remote>> cache = new WeakHashMap<>();
+		final Map<Remote<?>, Reference<Remote<?>>> cache = new WeakHashMap<>();
 
 		public <T> Remote<T> apply(T value) throws RemoteException {
 			final Remote<T> obj = new RemoteImpl<>(value);
@@ -25,8 +25,8 @@ public interface Remote<T> extends java.rmi.Remote {
 			return obj;
 		}
 
-		<T> java.rmi.Remote replace(Remote<T> obj) {
-			final Reference<java.rmi.Remote> w = cache.get(obj);
+		Remote<?> replace(Remote<?> obj) {
+			final Reference<Remote<?>> w = cache.get(obj);
 			return w == null ? obj : w.get();
 		}
 
