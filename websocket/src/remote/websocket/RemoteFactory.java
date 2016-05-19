@@ -82,7 +82,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	private byte[] marshall(final Object obj) throws IOException {
+	byte[] marshall(final Object obj) throws IOException {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try (final ObjectOutputStream oos = new ObjectOutputStream(os)) {
 			oos.writeObject(obj);
@@ -90,17 +90,16 @@ public class RemoteFactory implements remote.RemoteFactory {
 		return os.toByteArray();
 	}
 
-	void receive(final String id, final byte array[]) throws IOException {
+	void receive(final String id, final Object message) throws IOException {
 		try {
-			final Object obj = unmarshall(array);
-			if (obj instanceof MethodCall) {
-				final MethodCall call = (MethodCall) obj;
+			if (message instanceof MethodCall) {
+				final MethodCall call = (MethodCall) message;
 				final Remote<?> target = cache.get(call.getNum());
 				final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
 				final Object value = method.invoke(target, call.getArgs());
 				send(id, new Return(value, call.getId()));
-			} else if (obj instanceof Return) {
-				final Return ret = (Return) obj;
+			} else if (message instanceof Return) {
+				final Return ret = (Return) message;
 				final long relatesTo = ret.getRelatesTo();
 				returns.put(relatesTo, ret.getValue());
 				latches.get(relatesTo).countDown();
@@ -110,7 +109,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	private Object unmarshall(final byte array[]) throws IOException {
+	Object unmarshall(final byte array[]) throws IOException {
 		Object obj = null;
 		try (final ObjectInputStream ois = new InputStream(new ByteArrayInputStream(array), this)) {
 			obj = ois.readObject();
@@ -171,7 +170,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 					setId(senderId);
 					messageLatch.countDown();
 				} else {
-					receive(senderId, (byte[]) ois.readObject());
+					receive(senderId, unmarshall((byte[]) ois.readObject()));
 				}
 			} catch (final ClassNotFoundException e) {
 				e.printStackTrace();
