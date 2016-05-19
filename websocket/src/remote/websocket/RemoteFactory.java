@@ -22,7 +22,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
-import remote.Naming;
 import remote.Remote;
 import remote.spi.RemoteFactoryProvider;
 
@@ -34,10 +33,6 @@ public class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, Remote<?>> cache = new HashMap<>();
 	private Session session;
 	private String id;
-
-	String getId() {
-		return id;
-	}
 
 	Object invoke(final String id, final long objNum, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(objNum, method, types, args);
@@ -106,6 +101,20 @@ public class RemoteFactory implements remote.RemoteFactory {
 		return obj;
 	}
 
+	String getId() {
+		return id;
+	}
+
+	void setId(final String id) {
+		this.id = id;
+		if ("00000000-0000-0000-0000-000000000000".equals(id)) {
+			final RemoteImpl<Map<String, Object>> obj = new RemoteImpl<>(new HashMap<>(), this, 0);
+			cache.put(obj.getNum(), obj);
+		}
+	}
+
+	final Remote<Map<String, Object>> registry = new RemoteImpl_Stub<>("00000000-0000-0000-0000-000000000000", 0, this);
+
 	public <T> Remote<T> apply(final T value) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this);
 		cache.put(obj.getNum(), obj);
@@ -119,14 +128,12 @@ public class RemoteFactory implements remote.RemoteFactory {
 
 	public <T> void rebind(final String name, final T value) throws RemoteException {
 		final Remote<T> obj = apply(value);
-		new RemoteImpl_Stub<Naming>("00000000-0000-0000-0000-000000000000", RemoteObject.registry, this).map(a -> {
-			a.rebind(name, obj);
-			return null;
-		});
+		registry.map(a -> a.put(name, obj));
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> Remote<T> lookup(final String name) throws RemoteException {
-		return new RemoteImpl_Stub<Naming>("00000000-0000-0000-0000-000000000000", RemoteObject.registry, this).map(a -> a.lookup(name));
+		return registry.map(a -> (T) a.get(name));
 	}
 
 	@ClientEndpoint
@@ -142,11 +149,8 @@ public class RemoteFactory implements remote.RemoteFactory {
 			try (final ObjectInputStream ois = new ObjectInputStream(is)) {
 				final String senderId = (String) ois.readObject();
 				System.out.println(senderId);
-				if (id == null) {
-					id = senderId;
-					if ("00000000-0000-0000-0000-000000000000".equals(id)) {
-						cache.put(RemoteObject.registry, new RemoteImpl<Naming>(new Naming(), RemoteFactory.this, RemoteObject.registry));
-					}
+				if (getId() == null) {
+					setId(senderId);
 					messageLatch.countDown();
 				} else {
 					final Object obj = unmarshall((byte[]) ois.readObject());
