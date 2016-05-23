@@ -1,17 +1,10 @@
 package remote.websocket;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.rmi.RemoteException;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -23,32 +16,13 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
-import remote.Remote;
-import remote.server.MethodCall;
-import remote.server.Return;
 import remote.spi.RemoteFactoryProvider;
 
-public class RemoteFactory implements remote.RemoteFactory {
+public class RemoteFactory extends remote.server.RemoteFactory {
 	private final WebSocketContainer client = ContainerProvider.getWebSocketContainer();
 	private final CountDownLatch messageLatch = new CountDownLatch(1);
-	private final Map<Long, CountDownLatch> latches = new HashMap<>();
-	private final Map<Long, Object> returns = new HashMap<>();
-	private final Map<Long, Remote<?>> cache = new HashMap<>();
-	private final Random random = new SecureRandom();
 	private Session session;
 	private String id;
-
-	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
-		final MethodCall call = new MethodCall(random.nextLong(), num, method, types, args);
-		try {
-			send(id, marshall(call));
-			latches.put(call.getId(), new CountDownLatch(1));
-			latches.get(call.getId()).await(100, TimeUnit.SECONDS);
-		} catch (final IOException | InterruptedException e) {
-			throw new RemoteException(null, e);
-		}
-		return returns.get(call.getId());
-	}
 
 	public static class Provider implements RemoteFactoryProvider {
 		private final String schemes[] = new String[] {"ws", "wss"};
@@ -75,7 +49,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	void send(final String id, final byte array[]) throws RemoteException {
+	protected void send(final String id, final byte array[]) throws RemoteException {
 		try {
 			final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
 			oos.writeObject(id);
@@ -85,85 +59,19 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	byte[] marshall(final Object obj) throws IOException {
-		final ByteArrayOutputStream os = new ByteArrayOutputStream();
-		try (final ObjectOutputStream oos = new ObjectOutputStream(os)) {
-			oos.writeObject(obj);
-		}
-		return os.toByteArray();
-	}
-
-	Object unmarshall(final byte array[]) throws IOException {
-		Object obj = null;
-		try (final ObjectInputStream ois = new InputStream(new ByteArrayInputStream(array), this)) {
-			obj = ois.readObject();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return obj;
-	}
-
-	void receive(final String id, final byte array[]) throws IOException {
-		final Object message = unmarshall(array);
-		try {
-			if (message instanceof MethodCall) {
-				final MethodCall call = (MethodCall) message;
-				final Remote<?> target = cache.get(call.getNum());
-				final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
-				final Object value = method.invoke(target, call.getArgs());
-				final Return ret = new Return(value, call.getId());
-				send(id, marshall(ret));
-			} else if (message instanceof Return) {
-				final Return ret = (Return) message;
-				final long relatesTo = ret.getRelatesTo();
-				returns.put(relatesTo, ret.getValue());
-				latches.get(relatesTo).countDown();
-			}
-		} catch (final ReflectiveOperationException e) {
-			e.printStackTrace();
-		}
-	}
-
-	String getId() {
+	protected String getId() {
 		return id;
 	}
 
 	void setId(final String id) {
 		this.id = id;
 		if (getRegistryId().equals(id)) {
-			apply(new HashMap<String, Remote<?>>(), 0);
+			setRegistryId();
 		}
 	}
 
-	String getRegistryId() {
+	protected String getRegistryId() {
 		return "00000000-0000-0000-0000-000000000000";
-	}
-
-	final Remote<Map<String, Remote<?>>> registry = new RemoteImpl_Stub<>(getRegistryId(), 0, this);
-
-	public <T> Remote<T> apply(final T value) {
-		return apply(value, random.nextLong());
-	}
-
-	<T> Remote<T> apply(final T value, final long num) {
-		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
-		cache.put(obj.getNum(), obj);
-		return obj;
-	}
-
-	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
-		final long num = obj.getNum();
-		return cache.containsKey(num) ? cache.get(num) : obj;
-	}
-
-	public <T> void rebind(final String name, final T value) throws RemoteException {
-		final Remote<T> obj = apply(value);
-		registry.map(a -> a.put(name, obj));
-	}
-
-	@SuppressWarnings("unchecked")
-	public <T> Remote<T> lookup(final String name) throws RemoteException {
-		return registry.flatMap(a -> (Remote<T>) a.get(name));
 	}
 
 	@ClientEndpoint

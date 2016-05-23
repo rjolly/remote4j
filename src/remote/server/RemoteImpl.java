@@ -1,4 +1,4 @@
-package remote.websocket;
+package remote.server;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -6,7 +6,6 @@ import java.rmi.RemoteException;
 
 import remote.Function;
 import remote.Remote;
-import remote.server.RemoteObject;
 
 public class RemoteImpl<T> extends RemoteObject implements Remote<T>, Serializable {
 	private final RemoteFactory factory;
