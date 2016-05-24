@@ -2,15 +2,23 @@ package remote.channel;
 
 import java.io.IOException;
 import java.net.URI;
+import java.rmi.RemoteException;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.Random;
 
-import remote.Remote;
 import remote.spi.RemoteFactoryProvider;
 import edu.gvsu.cis.masl.channelAPI.ChannelAPI;
 import edu.gvsu.cis.masl.channelAPI.ChannelAPI.ChannelException;
 import edu.gvsu.cis.masl.channelAPI.ChannelListener;
 
-public class RemoteFactory implements remote.RemoteFactory {
+public class RemoteFactory  extends remote.server.RemoteFactory {
+	private static final Random random = new SecureRandom();
+	private static final Base64.Encoder encoder = Base64.getUrlEncoder();
+	private static final Base64.Decoder decoder = Base64.getUrlDecoder();
+	static final String registryId = encoder.encodeToString(new byte[12]);
 	private final ChannelAPI channel;
+	private final String id;
 
 	public static class Provider implements RemoteFactoryProvider {
 		private final String schemes[] = new String[] {"http", "https"};
@@ -28,8 +36,22 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
+	static String newId() {
+		final byte bytes[] = new byte[12];
+		random.nextBytes(bytes);
+		return encoder.encodeToString(bytes);
+	}
+
 	RemoteFactory(final URI uri) throws IOException {
-		channel = new ChannelAPI(uri.toString(), "key", new Listener());
+		this(uri, newId());
+	}
+
+	RemoteFactory(final URI uri, final String id) throws IOException {
+		this.id = id;
+		if (getRegistryId().equals(id)) {
+			setRegistryId();
+		}
+		channel = new ChannelAPI(uri.toString(), id, new Listener());
 		try {
 			channel.open();
 		} catch (final ChannelException e) {
@@ -37,30 +59,43 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	public <T> Remote<T> apply(final T value) {
-		return null;
+	@Override
+	protected void send(final String id, final byte array[]) throws RemoteException {
+		try {
+			channel.send(getId() + ";" + encoder.encodeToString(array), id, "/mediator");
+		} catch (final IOException e) {
+			throw new RemoteException(null, e);
+		}
 	}
 
-	public <T> void rebind(final String name, final T value) {
+	@Override
+	protected String getId() {
+		return id;
 	}
 
-	public <T> Remote<T> lookup(final String name) {
-		return null;
+	@Override
+	protected String getRegistryId() {
+		return registryId;
+	}
+
+	@Override
+	protected void finalize() throws IOException {
+		channel.close();
 	}
 
 	class Listener implements ChannelListener {
 		@Override
 		public void onOpen() {
-			try {
-				channel.send("hello world", "key", "/mediator");
-			} catch (final IOException e) {
-				e.printStackTrace();
-			}
 		}
 
 		@Override
 		public void onMessage(final String message) {
-			System.out.println("Server push: " + message);
+			final int n = message.indexOf(";");
+			try {
+				receive(message.substring(0, n), decoder.decode(message.substring(n + 1)));
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		@Override

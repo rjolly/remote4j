@@ -1,7 +1,16 @@
+import remote.Remote;
 import remote.RemoteFactory;
 
 public class Main {
 	public static void main(final String[] args) throws Exception {
-		RemoteFactory.apply("http://localhost:8080");
+		final RemoteFactory factory = RemoteFactory.apply("http://localhost:8080");
+		final Remote<Object> obj = factory.lookup("obj");
+		final Remote<String> str = obj.map(a -> a.toString());
+		System.out.println(str);
+		System.out.println(str.get());
+		final Remote<Object> obj2 = obj.map(a -> new Object());
+		final Remote<Boolean> c = obj.flatMap(a -> obj2.map(b -> a.equals(b)));
+		System.out.println(c);
+		System.out.println(c.get());
 	}
 }
