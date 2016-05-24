@@ -40,12 +40,12 @@ public class RemoteFactory implements remote.RemoteFactory {
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(random.nextLong(), num, method, types, args);
-		send(id, call);
-		latches.put(call.getId(), new CountDownLatch(1));
 		try {
+			send(id, marshall(call));
+			latches.put(call.getId(), new CountDownLatch(1));
 			latches.get(call.getId()).await(100, TimeUnit.SECONDS);
-		} catch (final InterruptedException e) {
-			e.printStackTrace();
+		} catch (final IOException | InterruptedException e) {
+			throw new RemoteException(null, e);
 		}
 		return returns.get(call.getId());
 	}
@@ -75,11 +75,11 @@ public class RemoteFactory implements remote.RemoteFactory {
 		}
 	}
 
-	void send(final String id, final Object message) throws RemoteException {
+	void send(final String id, final byte array[]) throws RemoteException {
 		try {
 			final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
 			oos.writeObject(id);
-			oos.writeObject(marshall(message));
+			oos.writeObject(array);
 		} catch (final IOException e) {
 			throw new RemoteException(null, e);
 		}
@@ -93,14 +93,26 @@ public class RemoteFactory implements remote.RemoteFactory {
 		return os.toByteArray();
 	}
 
-	void receive(final String id, final Object message) throws IOException {
+	Object unmarshall(final byte array[]) throws IOException {
+		Object obj = null;
+		try (final ObjectInputStream ois = new InputStream(new ByteArrayInputStream(array), this)) {
+			obj = ois.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return obj;
+	}
+
+	void receive(final String id, final byte array[]) throws IOException {
+		final Object message = unmarshall(array);
 		try {
 			if (message instanceof MethodCall) {
 				final MethodCall call = (MethodCall) message;
 				final Remote<?> target = cache.get(call.getNum());
 				final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
 				final Object value = method.invoke(target, call.getArgs());
-				send(id, new Return(value, call.getId()));
+				final Return ret = new Return(value, call.getId());
+				send(id, marshall(ret));
 			} else if (message instanceof Return) {
 				final Return ret = (Return) message;
 				final long relatesTo = ret.getRelatesTo();
@@ -110,16 +122,6 @@ public class RemoteFactory implements remote.RemoteFactory {
 		} catch (final ReflectiveOperationException e) {
 			e.printStackTrace();
 		}
-	}
-
-	Object unmarshall(final byte array[]) throws IOException {
-		Object obj = null;
-		try (final ObjectInputStream ois = new InputStream(new ByteArrayInputStream(array), this)) {
-			obj = ois.readObject();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return obj;
 	}
 
 	String getId() {
@@ -180,7 +182,7 @@ public class RemoteFactory implements remote.RemoteFactory {
 					setId(senderId);
 					messageLatch.countDown();
 				} else {
-					receive(senderId, unmarshall((byte[]) ois.readObject()));
+					receive(senderId, (byte[]) ois.readObject());
 				}
 			} catch (final ClassNotFoundException e) {
 				e.printStackTrace();
