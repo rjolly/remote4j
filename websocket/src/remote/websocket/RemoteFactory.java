@@ -8,8 +8,10 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.rmi.RemoteException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -32,11 +34,12 @@ public class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, CountDownLatch> latches = new HashMap<>();
 	private final Map<Long, Object> returns = new HashMap<>();
 	private final Map<Long, Remote<?>> cache = new HashMap<>();
+	private final Random random = new SecureRandom();
 	private Session session;
 	private String id;
 
-	Object invoke(final String id, final long objNum, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
-		final MethodCall call = new MethodCall(objNum, method, types, args);
+	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
+		final MethodCall call = new MethodCall(random.nextLong(), num, method, types, args);
 		send(id, call);
 		latches.put(call.getId(), new CountDownLatch(1));
 		try {
@@ -125,16 +128,23 @@ public class RemoteFactory implements remote.RemoteFactory {
 
 	void setId(final String id) {
 		this.id = id;
-		if ("00000000-0000-0000-0000-000000000000".equals(id)) {
-			final RemoteImpl<Map<String, Remote<?>>> obj = new RemoteImpl<>(new HashMap<>(), this, 0);
-			cache.put(obj.getNum(), obj);
+		if (getRegistryId().equals(id)) {
+			apply(new HashMap<String, Remote<?>>(), 0);
 		}
 	}
 
-	final Remote<Map<String, Remote<?>>> registry = new RemoteImpl_Stub<>("00000000-0000-0000-0000-000000000000", 0, this);
+	String getRegistryId() {
+		return "00000000-0000-0000-0000-000000000000";
+	}
+
+	final Remote<Map<String, Remote<?>>> registry = new RemoteImpl_Stub<>(getRegistryId(), 0, this);
 
 	public <T> Remote<T> apply(final T value) {
-		final RemoteImpl<T> obj = new RemoteImpl<>(value, this);
+		return apply(value, random.nextLong());
+	}
+
+	<T> Remote<T> apply(final T value, final long num) {
+		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
 		cache.put(obj.getNum(), obj);
 		return obj;
 	}

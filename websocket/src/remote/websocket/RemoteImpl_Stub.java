@@ -15,10 +15,6 @@ public class RemoteImpl_Stub<T> extends RemoteObject implements Remote<T>, Seria
 	private transient RemoteFactory factory;
 	private final String id;
 
-	public RemoteImpl_Stub(final String id, final long num) {
-		this(id, num, null);
-	}
-
 	public RemoteImpl_Stub(final String id, final long num, final RemoteFactory factory) {
 		super(num);
 		this.id = id;

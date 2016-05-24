@@ -1,14 +1,11 @@
 package remote.server;
 
 import java.io.Serializable;
-import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Random;
 
 @SuppressWarnings("serial")
 public class MethodCall implements Serializable {
-	private static final Random random = new SecureRandom();
-	private final long id = random.nextLong();
+	private final long id;
 	private final long num;
 	private final String name;
 	private final Object args[];
@@ -34,7 +31,8 @@ public class MethodCall implements Serializable {
 		return args;
 	}
 
-	public MethodCall(final long num, final String name, final Class<?> types[], final Object args[]) {
+	public MethodCall(final long id, final long num, final String name, final Class<?> types[], final Object args[]) {
+		this.id = id;
 		this.num = num;
 		this.name = name;
 		this.types = types;
