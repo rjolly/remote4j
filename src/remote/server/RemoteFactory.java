@@ -5,12 +5,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +22,8 @@ import remote.Remote;
 public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, CountDownLatch> latches = new HashMap<>();
 	private final Map<Long, Object> returns = new HashMap<>();
-	private final Map<Long, Remote<?>> cache = new HashMap<>();
+	private final Map<Long, Remote<?>> objs = new HashMap<>();
+	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
 	private final Random random = new SecureRandom();
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
@@ -59,7 +63,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		try {
 			if (message instanceof MethodCall) {
 				final MethodCall call = (MethodCall) message;
-				final Remote<?> target = cache.get(call.getNum());
+				final Remote<?> target = objs.get(call.getNum());
 				final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
 				final Object value = method.invoke(target, call.getArgs());
 				final Return ret = new Return(value, call.getId());
@@ -91,13 +95,24 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	<T> Remote<T> apply(final T value, final long num) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
-		cache.put(obj.getNum(), obj);
+		objs.put(obj.getNum(), obj);
 		return obj;
 	}
 
 	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
 		final long num = obj.getNum();
-		return cache.containsKey(num) ? cache.get(num) : obj;
+		return objs.containsKey(num) ? objs.get(num) : cache(obj);
+	}
+
+	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
+		Remote<?> o;
+		final Reference<Remote<?>> w = cache.get(obj);
+		if (w == null || (o = w.get()) == null) {
+			cache.put(obj, new WeakReference<>(obj));
+			return obj;
+		} else {
+			return o;
+		}
 	}
 
 	public <T> void rebind(final String name, final T value) throws RemoteException {
