@@ -2,7 +2,6 @@ package remote.channel;
 
 import java.io.IOException;
 import java.net.URI;
-import java.rmi.RemoteException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Random;
@@ -60,12 +59,8 @@ public class RemoteFactory  extends remote.server.RemoteFactory {
 	}
 
 	@Override
-	protected void send(final String id, final byte array[]) throws RemoteException {
-		try {
-			channel.send(getId() + ";" + encoder.encodeToString(array), id, "/mediator");
-		} catch (final IOException e) {
-			throw new RemoteException(null, e);
-		}
+	protected void send(final String id, final byte array[]) throws IOException {
+		channel.send(getId() + ";" + encoder.encodeToString(array), id, "/mediator");
 	}
 
 	@Override

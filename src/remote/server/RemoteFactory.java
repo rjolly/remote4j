@@ -38,7 +38,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return returns.get(call.getId());
 	}
 
-	protected abstract void send(final String id, final byte array[]) throws RemoteException;
+	protected abstract void send(final String id, final byte array[]) throws IOException;
 
 	byte[] marshall(final Object obj) throws IOException {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();

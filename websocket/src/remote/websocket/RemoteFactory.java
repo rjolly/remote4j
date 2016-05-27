@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
-import java.rmi.RemoteException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -49,14 +48,10 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 		}
 	}
 
-	protected void send(final String id, final byte array[]) throws RemoteException {
-		try {
-			final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
-			oos.writeObject(id);
-			oos.writeObject(array);
-		} catch (final IOException e) {
-			throw new RemoteException(null, e);
-		}
+	protected void send(final String id, final byte array[]) throws IOException {
+		final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
+		oos.writeObject(id);
+		oos.writeObject(array);
 	}
 
 	protected String getId() {
