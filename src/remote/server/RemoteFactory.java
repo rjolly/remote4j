@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.security.SecureRandom;
@@ -21,6 +22,7 @@ import remote.Remote;
 
 public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, CountDownLatch> latches = new HashMap<>();
+	private final Map<Long, Throwable> exceptions = new HashMap<>();
 	private final Map<Long, Object> returns = new HashMap<>();
 	private final Map<Long, Remote<?>> objs = new HashMap<>();
 	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
@@ -28,14 +30,19 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(random.nextLong(), num, method, types, args);
+		final long callId = call.getId();
 		try {
 			send(id, marshall(call));
-			latches.put(call.getId(), new CountDownLatch(1));
-			latches.get(call.getId()).await(100, TimeUnit.SECONDS);
+			latches.put(callId, new CountDownLatch(1));
+			latches.get(callId).await(100, TimeUnit.SECONDS);
 		} catch (final IOException | InterruptedException e) {
-			throw new RemoteException(null, e);
+			throw new RemoteException("invocation error", e);
 		}
-		return returns.get(call.getId());
+		if (exceptions.containsKey(callId)) {
+			throw new RemoteException("target exception", exceptions.get(callId));
+		} else {
+			return returns.get(callId);
+		}
 	}
 
 	protected abstract void send(final String id, final byte array[]) throws IOException;
@@ -60,23 +67,30 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	protected final void receive(final String id, final byte array[]) throws IOException {
 		final Object message = unmarshall(array);
-		try {
 			if (message instanceof MethodCall) {
 				final MethodCall call = (MethodCall) message;
 				final Remote<?> target = objs.get(call.getNum());
-				final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
-				final Object value = method.invoke(target, call.getArgs());
-				final Return ret = new Return(value, call.getId());
-				send(id, marshall(ret));
+				try {
+					final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
+					final Object value = method.invoke(target, call.getArgs());
+					final Return ret = new Return(value, call.getId());
+					send(id, marshall(ret));
+				} catch (final InvocationTargetException e) {
+					final Exception exc = new Exception(e.getTargetException(), call.getId());
+					send(id, marshall(exc));
+				} catch (final ReflectiveOperationException e) {
+					e.printStackTrace();
+				}
 			} else if (message instanceof Return) {
 				final Return ret = (Return) message;
 				final long relatesTo = ret.getRelatesTo();
-				returns.put(relatesTo, ret.getValue());
+				if (ret instanceof Exception) {
+					exceptions.put(relatesTo, ((Exception) ret).getValue());
+				} else {
+					returns.put(relatesTo, ret.getValue());
+				}
 				latches.get(relatesTo).countDown();
 			}
-		} catch (final ReflectiveOperationException e) {
-			e.printStackTrace();
-		}
 	}
 
 	protected abstract String getId();
