@@ -38,10 +38,11 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		} catch (final IOException | InterruptedException e) {
 			throw new RemoteException("invocation error", e);
 		}
+		latches.remove(callId);
 		if (exceptions.containsKey(callId)) {
-			throw new RemoteException("target exception", exceptions.get(callId));
+			throw new RemoteException("target exception", exceptions.remove(callId));
 		} else {
-			return returns.get(callId);
+			return returns.remove(callId);
 		}
 	}
 
