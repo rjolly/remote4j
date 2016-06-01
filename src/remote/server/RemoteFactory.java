@@ -11,6 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -24,9 +25,11 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, CountDownLatch> latches = new HashMap<>();
 	private final Map<Long, Throwable> exceptions = new HashMap<>();
 	private final Map<Long, Object> returns = new HashMap<>();
-	private final Map<Long, Remote<?>> objs = new HashMap<>();
+	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
 	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
 	private final Random random = new SecureRandom();
+	private final DGCClient client = new DGCClient(this);
+	private final DGC dgc = new DGC(this); 
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(random.nextLong(), num, method, types, args);
@@ -104,13 +107,26 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	final Remote<Map<String, Remote<?>>> registry = new RemoteImpl_Stub<>(getRegistryId(), 0, this);
 
+	protected RemoteFactory() {
+		apply(dgc, 1);
+	}
+
+	Map<Long, Remote<?>> getObjects() {
+		return objs;
+	}
+
+	DGCClient getClient() {
+		return client;
+	}
+
 	public <T> Remote<T> apply(final T value) {
 		return apply(value, random.nextLong());
 	}
 
 	<T> Remote<T> apply(final T value, final long num) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
-		objs.put(obj.getNum(), obj);
+		dgc.dirty(new Long[] {num}, getId(), client.value);
+		objs.put(num, obj);
 		return obj;
 	}
 
@@ -124,10 +140,16 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		final Reference<Remote<?>> w = cache.get(obj);
 		if (w == null || (o = w.get()) == null) {
 			cache.put(obj, new WeakReference<>(obj));
+			client.dirty(obj.getId(), obj.getNum());
+			obj.setState(true);
 			return obj;
 		} else {
 			return o;
 		}
+	}
+
+	Remote<DGC> dgc(final String id) {
+		return new RemoteImpl_Stub<>(id, 1, this);
 	}
 
 	public <T> void rebind(final String name, final T value) throws RemoteException {

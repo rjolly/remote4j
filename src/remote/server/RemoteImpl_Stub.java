@@ -13,6 +13,15 @@ import remote.Remote;
 public class RemoteImpl_Stub<T> extends RemoteObject implements Remote<T>, Serializable {
 	private transient RemoteFactory factory;
 	private final String id;
+	private boolean state;
+
+	String getId() {
+		return id;
+	}
+
+	void setState(final boolean state) {
+		this.state = state;
+	}
 
 	RemoteImpl_Stub(final String id, final long num, final RemoteFactory factory) {
 		super(num);
@@ -50,5 +59,12 @@ public class RemoteImpl_Stub<T> extends RemoteObject implements Remote<T>, Seria
 	@Override
 	public String toString() {
 		return id + ":" + super.toString();
+	}
+
+	@Override
+	protected void finalize() {
+		if (state) {
+			factory.getClient().clean(id, getNum());
+		}
 	}
 }
