@@ -18,7 +18,7 @@ public class DGCClient {
 	private final Map<String, Remote<DGC>> remotes = new HashMap<>();
 	private final Map<String, Collection<Long>> collected = new HashMap<>();
 	private final Map<String, Collection<Long>> live = new HashMap<>();
-	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
+	private final Map<String, Map<RemoteObject, Reference<Remote<?>>>> caches = new HashMap<>();
 	final long value = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
 	private final Timer timerGc = new Timer(true);
 	private final Timer timer = new Timer(true);
@@ -46,10 +46,15 @@ public class DGCClient {
 
 	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
 		Remote<?> o;
+		final String id = obj.getId();
+		if (!caches.containsKey(id)) {
+			caches.put(id, new WeakHashMap<>());
+		}
+		final Map<RemoteObject, Reference<Remote<?>>> cache = caches.get(id);
 		final Reference<Remote<?>> w = cache.get(obj);
 		if (w == null || (o = w.get()) == null) {
 			cache.put(obj, new WeakReference<>(obj));
-			dirty(obj.getId(), obj.getNum());
+			dirty(id, obj.getNum());
 			obj.setState(true);
 			return obj;
 		} else {
