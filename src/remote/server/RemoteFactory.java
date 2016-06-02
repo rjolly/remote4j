@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import remote.Remote;
 
@@ -23,12 +24,15 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, Throwable> exceptions = new HashMap<>();
 	private final Map<Long, Object> returns = new HashMap<>();
 	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
+	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
 	private final Random random = new SecureRandom();
+	private final AtomicLong nextObjNum = new AtomicLong(2);
+	private final AtomicLong nextCallId = new AtomicLong(0);
 	private final DGCClient client = new DGCClient(this);
 	private final DGC dgc = new DGC(this); 
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
-		final MethodCall call = new MethodCall(random.nextLong(), num, method, types, args);
+		final MethodCall call = new MethodCall(nextCallId.getAndIncrement(), num, method, types, args);
 		final long callId = call.getId();
 		try {
 			send(id, marshall(call));
@@ -115,8 +119,12 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return client;
 	}
 
+	private long nextObjNum() {
+		return secure?random.nextLong():nextObjNum.getAndIncrement();
+	}
+
 	public <T> Remote<T> apply(final T value) {
-		return apply(value, random.nextLong());
+		return apply(value, nextObjNum());
 	}
 
 	<T> Remote<T> apply(final T value, final long num) {
