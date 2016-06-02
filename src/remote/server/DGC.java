@@ -45,10 +45,10 @@ public class DGC {
 		boolean c = true;
 		for (final long num : nums) {
 			if (num > 1) {
-				Map<String, Long> map = leases.get(num);
-				if (map == null) {
-					leases.put(num, map = new HashMap<>());
+				if (!leases.containsKey(num)) {
+					leases.put(num, new HashMap<>());
 				}
+				final Map<String, Long> map = leases.get(num);
 				c = c & map.put(id, t) != null;
 			}
 		}
