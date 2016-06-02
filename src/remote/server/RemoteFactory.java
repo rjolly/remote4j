@@ -5,8 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
@@ -15,7 +13,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +23,6 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, Throwable> exceptions = new HashMap<>();
 	private final Map<Long, Object> returns = new HashMap<>();
 	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
-	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
 	private final Random random = new SecureRandom();
 	private final DGCClient client = new DGCClient(this);
 	private final DGC dgc = new DGC(this); 
@@ -132,20 +128,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
 		final long num = obj.getNum();
-		return objs.containsKey(num) ? objs.get(num) : cache(obj);
-	}
-
-	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
-		Remote<?> o;
-		final Reference<Remote<?>> w = cache.get(obj);
-		if (w == null || (o = w.get()) == null) {
-			cache.put(obj, new WeakReference<>(obj));
-			client.dirty(obj.getId(), obj.getNum());
-			obj.setState(true);
-			return obj;
-		} else {
-			return o;
-		}
+		return objs.containsKey(num) ? objs.get(num) : client.cache(obj);
 	}
 
 	Remote<DGC> dgc(final String id) {

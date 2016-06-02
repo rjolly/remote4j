@@ -1,5 +1,7 @@
 package remote.server;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.WeakHashMap;
 
 import remote.Remote;
 
@@ -15,6 +18,7 @@ public class DGCClient {
 	private final Map<String, Remote<DGC>> remotes = new HashMap<>();
 	private final Map<String, Collection<Long>> collected = new HashMap<>();
 	private final Map<String, Collection<Long>> live = new HashMap<>();
+	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
 	final long value = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
 	private final Timer timerGc = new Timer(true);
 	private final Timer timer = new Timer(true);
@@ -38,6 +42,19 @@ public class DGCClient {
 				System.gc();
 			}
 		}, 0, Long.valueOf(System.getProperty("sun.rmi.dgc.client.gcInterval", "3600000")));
+	}
+
+	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
+		Remote<?> o;
+		final Reference<Remote<?>> w = cache.get(obj);
+		if (w == null || (o = w.get()) == null) {
+			cache.put(obj, new WeakReference<>(obj));
+			dirty(obj.getId(), obj.getNum());
+			obj.setState(true);
+			return obj;
+		} else {
+			return o;
+		}
 	}
 
 	synchronized void clean(final String id, final long num) {
