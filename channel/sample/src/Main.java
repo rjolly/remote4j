@@ -3,7 +3,7 @@ import remote.RemoteFactory;
 
 public class Main {
 	public static void main(final String[] args) throws Exception {
-		final RemoteFactory factory = RemoteFactory.apply("http://localhost:8080");
+		final RemoteFactory factory = RemoteFactory.apply(args.length > 0?args[0]:"http://localhost:8080");
 		final Remote<Object> obj = factory.lookup("obj");
 		final Remote<String> str = obj.map(a -> a.toString());
 		System.out.println(str);

@@ -135,8 +135,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
-		final long num = obj.getNum();
-		return objs.containsKey(num) ? objs.get(num) : client.cache(obj);
+		return obj.getId().equals(getId()) ? objs.get(obj.getNum()) : client.cache(obj);
 	}
 
 	Remote<DGC> dgc(final String id) {
@@ -145,7 +144,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	public <T> void rebind(final String name, final T value) throws RemoteException {
 		final Remote<T> obj = apply(value);
-		registry.map(a -> a.put(name, obj));
+		registry.flatMap(a -> a.put(name, obj));
 	}
 
 	@SuppressWarnings("unchecked")
