@@ -1,7 +1,12 @@
 
-Basic concept
+Basic concept : move the code, not the data
 
-This project brings orthogonal remote invocation to Java : you can have remote access to your existing code, unchanged. RMI is removed from your class inheritance hierarchies thanks to the magic of functional programming. Instead of implementing a Remote interface, you communicate with a remote object through a Remote monad. This is a kind of wrapper which allows to pass instructions to the remote object in the form of closures, using its map (and flatMap) methods.
+This projects brings functional programming to Java RMI. It introduces the Remote monad, a mechanism by which code can be sent to a target object as a closure and executed remotely (query shipping). In practice, the Remote monad is implemented as a remote object in the RMI sense. It is a wrapper to a normal Java object, whose type it is parametrized with. It exposes map and flatMap remote methods, with their function arguments.
+
+This allows orthogonal remote invocation : you don't have to implement a Remote interface to make remote calls to your existing code, which is made readily accessible, unchanged. RMI is removed from your class hierarchies.
+
+
+Sample code
 
 		final Remote<Object> obj = Remote.lookup("obj");
 		final Remote<String> str = obj.map(a -> a.toString());
@@ -17,14 +22,13 @@ This last statement is meant to bring the remote object locally. It will work fo
 
 The server looks just like regular RMI, with the difference that it deals with arbitrary objects and not just java.rmi.Remote objects:
 
-		final Object obj = new Object();
-		Remote.rebind("obj", obj);
+		Remote.rebind("obj", new Object());
 		System.out.println("obj bound in registry");
 
 
 Distributed applications
 
-In some cases, objects on opposite sides will need to communicate, for instance when you want to be notified localy to changes to a remote object. In this observable-observer pattern, the local side will have to act as a server. A local remote object is created as follows:
+In some cases, the code will need to travel in the opposite direction (from server to client), for instance when you want to be notified localy to changes to a remote object. In this observable-observer pattern, the local side will have to act as a server. A local remote object is created as follows:
 
 		final Remote<Observer> observer = Remote.apply((Observable o, Object arg) -> {
 			System.out.println("notified");
@@ -85,4 +89,55 @@ Then just run the server and client classes in turn:
 
 To use in your project:
   add com.github.rjolly#remote4j;1.0 to your dependencies
+
+
+Web applications
+
+The standard technique to run RMI over the internet is HTTP tunneling, but it does not work in all cases. The project's solution is instead to introduce a websocket mediator, which will act as a middleman between client and server (and distributed objects in general).
+
+
+To install and run:
+  wget http://raphael.jolly.free.fr/remote4j/websocket-mediator.zip
+  mkdir mediator
+  cd mediator
+  unzip ../websocket-mediator.zip
+  java -jar remote4j-websocket-mediator.jar
+
+
+To use the websocket mediator:
+  add com.github.rjolly#remote4j-websocket;1.1 to your dependencies
+
+
+Then, on the server side, instead of:
+
+		Remote.rebind("obj", new Object());
+
+, you now have to set the mediator address:
+
+		RemoteFactory factory = RemoteFactory.apply("ws://localhost:8080/websockets/mediator");
+		factory.rebind("obj", new Object());
+
+On the client side, instead of:
+
+		Remote<Object> obj = Remote.lookup("obj");
+
+, you now have:
+
+		RemoteFactory factory = // same as on the server side
+		Remote<Object> obj = factory.lookup("obj");
+
+
+There is also a GAE Channel based mediator implementation. It must be deployed from the project at:
+
+https://github.com/rjolly/remote4j/tree/master/channel/mediator
+
+
+To use the channel mediator:
+  add com.github.rjolly#remote4j-channel;1.1 to your dependencies
+
+
+To set the channel mediator address:
+
+		RemoteFactory factory = RemoteFactory.apply("http://localhost:8080"); // developement
+		RemoteFactory factory = RemoteFactory.apply("http://myproject.appspot.com/"); // production
 
