@@ -105,7 +105,7 @@ To install and run:
 
 
 To use the websocket mediator:
-  add com.github.rjolly#remote4j-websocket;1.1 to your dependencies
+  add com.github.rjolly#remote4j-websocket;1.1.1 to your dependencies
 
 
 Then, on the server side, instead of:
@@ -128,6 +128,7 @@ On the client side, instead of:
 
 
 To run the sample:
+  run as java application : remote.websocket.Registry
   run as java application : Server
   run as java application : Main
 
