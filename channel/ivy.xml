@@ -22,6 +22,6 @@
     </publications>
     <dependencies>
         <dependency org="com.github.rjolly" name="remote4j" rev="1.1" conf="compile->master"/>
-        <dependency org="edu.gvsu.cis.masl" name="java-channels-api" rev="0.2-SNAPSHOT" conf="compile->master"/>
+        <dependency org="com.github.rjolly" name="java-channels-api" rev="0.2" conf="compile->master"/>
     </dependencies>
 </ivy-module>

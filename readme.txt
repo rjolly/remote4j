@@ -88,7 +88,7 @@ Then just run the server and client classes in turn:
 
 
 To use in your project:
-  add com.github.rjolly#remote4j;1.0 to your dependencies
+  add com.github.rjolly#remote4j;1.1 to your dependencies
 
 
 Web applications
@@ -127,6 +127,11 @@ On the client side, instead of:
 		Remote<Object> obj = factory.lookup("obj");
 
 
+To run the sample:
+  run as java application : Server
+  run as java application : Main
+
+
 There is also a GAE Channel based mediator implementation. It must be deployed from the project at:
 
 https://github.com/rjolly/remote4j/tree/master/channel/mediator
@@ -140,4 +145,10 @@ To set the channel mediator address:
 
 		RemoteFactory factory = RemoteFactory.apply("http://localhost:8080"); // developement
 		RemoteFactory factory = RemoteFactory.apply("http://myproject.appspot.com/"); // production
+
+
+To run the sample:
+  run as java application : remote.channel.Registry
+  run as java application : Server
+  run as java application : Main
 
