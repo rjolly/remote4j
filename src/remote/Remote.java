@@ -26,8 +26,9 @@ public interface Remote<T> extends java.rmi.Remote {
 		}
 
 		Remote<?> replace(Remote<?> obj) {
+			Remote<?> o;
 			final Reference<Remote<?>> w = cache.get(obj);
-			return w == null ? obj : w.get();
+			return w == null || (o = w.get()) == null? obj : o;
 		}
 
 		public <T> void rebind(String name, T value) throws RemoteException, MalformedURLException {
