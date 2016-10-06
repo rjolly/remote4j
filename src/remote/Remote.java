@@ -1,5 +1,6 @@
 package remote;
 
+import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
@@ -51,5 +52,19 @@ public interface Remote<T> extends java.rmi.Remote {
 
 	public static <T> Remote<T> lookup(String name) throws MalformedURLException, RemoteException, NotBoundException {
 		return factory.lookup(name);
+	}
+
+
+	public abstract class Stub<T> implements Serializable {
+		protected abstract Remote<T> getValue();
+
+		@Override
+		public String toString() {
+			try {
+				return getValue().map(a -> a.toString()).get();
+			} catch (final RemoteException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 }

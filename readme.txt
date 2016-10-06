@@ -30,24 +30,40 @@ Distributed applications
 
 In some cases, the code will need to travel in the opposite direction (from server to client), for instance when you want to be notified localy to changes to a remote object. In this observable-observer pattern, the local side will have to act as a server. A local remote object is created as follows:
 
-		final Remote<Observer> observer = Remote.apply((Observable o, Object arg) -> {
+		final Observer observer = new ObserverStub((Observable o, Object arg) -> {
 			System.out.println("notified");
 		});
 
-This object is added as an observer to a remote observable object:
+, with ObserverStub acting as a delegate for the remote Observer:
 
-		final Remote<Observable> observable = Remote.lookup("obj").map(a -> {
-			final Observable obs = new MyObservable();
-			obs.addObserver((Observable o, Object arg) -> {
+		class ObserverStub extends Remote.Stub<Observer> implements Observer {
+			private final Remote<Observer> value;
+
+			ObserverStub(final Observer observer) throws RemoteException {
+				value = Remote.apply(observer);
+			}
+
+			public final Remote<Observer> getValue() {
+				return value;
+			}
+
+			public void update(final Observable o, final Object arg) {
 				try {
-					observer.map(b -> {
+					value.map(b -> {
 						b.update(o, arg); // variable o is sent accross the network, so it needs to be serializable (*)
 						return null;
 					});
 				} catch (final RemoteException e) {
 					e.printStackTrace();
 				}
-			});
+			}
+		}
+
+The object is added as an observer to a remote observable object:
+
+		final Remote<Observable> observable = Remote.lookup("obj").map(a -> {
+			final Observable obs = new MyObservable();
+			obs.addObserver(observer);
 			return obs;
 		});
 
