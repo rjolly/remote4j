@@ -1,17 +1,21 @@
 package remote.secure;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.NoSuchObjectException;
-import java.rmi.server.UnicastRemoteObject;
 import javax.security.auth.callback.PasswordCallback;
 import remote.Remote;
+import remote.RemoteFactory;
 
+@SuppressWarnings("serial")
 class LocalPasswordCallback extends PasswordCallback {
 	private final Remote<PasswordCallback> callback;
+	transient private final RemoteFactory factory;
 
-	LocalPasswordCallback(final String prompt, final boolean echoOn) throws RemoteException {
+	LocalPasswordCallback(final RemoteFactory factory, final String prompt, final boolean echoOn) throws IOException {
 		super(prompt, echoOn);
-		callback = Remote.apply(new PasswordCallback(prompt, echoOn));
+		callback = factory.apply(new PasswordCallback(prompt, echoOn));
+		this.factory = factory;
 	}
 
 	@Override
@@ -66,6 +70,6 @@ class LocalPasswordCallback extends PasswordCallback {
 	}
 
 	public boolean unexport() throws NoSuchObjectException {
-		return UnicastRemoteObject.unexportObject(callback, true);
+		return factory.unexport(callback);
 	}
 }

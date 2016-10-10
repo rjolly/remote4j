@@ -151,4 +151,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	public <T> Remote<T> lookup(final String name) throws RemoteException {
 		return registry.flatMap(a -> (Remote<T>) a.get(name));
 	}
+
+	public <T> boolean unexport(final Remote<T> obj) {
+		return true;
+	}
 }

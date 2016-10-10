@@ -23,7 +23,7 @@ public interface Remote<T> extends java.rmi.Remote {
 	public static class Factory implements RemoteFactory {
 		final Map<Remote<?>, Reference<Remote<?>>> cache = new WeakHashMap<>();
 
-		public <T> Remote<T> apply(T value) throws RemoteException {
+		public <T> Remote<T> apply(final T value) throws RemoteException {
 			if (value == VOID) {
 				return null;
 			}
@@ -32,36 +32,50 @@ public interface Remote<T> extends java.rmi.Remote {
 			return obj;
 		}
 
-		Remote<?> replace(Remote<?> obj) {
+		Remote<?> replace(final Remote<?> obj) {
 			Remote<?> o;
 			final Reference<Remote<?>> w = cache.get(obj);
 			return w == null || (o = w.get()) == null? obj : o;
 		}
 
-		public <T> void rebind(String name, T value) throws RemoteException, MalformedURLException {
+		public <T> void rebind(final String name, final T value) throws RemoteException, MalformedURLException {
 			Naming.rebind(name, apply(value));
 		}
 
 		@SuppressWarnings("unchecked")
-		public <T> Remote<T> lookup(String name) throws MalformedURLException, RemoteException, NotBoundException {
+		public <T> Remote<T> lookup(final String name) throws MalformedURLException, RemoteException, NotBoundException {
 			return (Remote<T>)Naming.lookup(name);
+		}
+
+		public <T> boolean unexport(final Remote<T> obj) throws NoSuchObjectException {
+			return UnicastRemoteObject.unexportObject(obj, true);
 		}
 	}
 
-	public static <T> Remote<T> apply(T value) throws RemoteException {
+	public static <T> Remote<T> apply(final T value) throws RemoteException {
 		return factory.apply(value);
 	}
 
-	public static <T> void rebind(String name, T value) throws RemoteException, MalformedURLException {
+	public static <T> void rebind(final String name, final T value) throws RemoteException, MalformedURLException {
 		factory.rebind(name, value);
 	}
 
-	public static <T> Remote<T> lookup(String name) throws MalformedURLException, RemoteException, NotBoundException {
+	public static <T> Remote<T> lookup(final String name) throws MalformedURLException, RemoteException, NotBoundException {
 		return factory.lookup(name);
 	}
 
+	public static <T> boolean unexport(final Remote<T> obj) throws NoSuchObjectException {
+		return factory.unexport(obj);
+	}
 
+	@SuppressWarnings("serial")
 	public abstract class Stub<T> implements Serializable {
+		transient private final RemoteFactory factory;
+
+		public Stub(final RemoteFactory factory) {
+			this.factory = factory;
+		}
+
 		protected abstract Remote<T> getValue();
 
 		@Override
@@ -74,7 +88,7 @@ public interface Remote<T> extends java.rmi.Remote {
 		}
 
 		public boolean unexport() throws NoSuchObjectException {
-			return UnicastRemoteObject.unexportObject(getValue(), true);
+			return factory.unexport(getValue());
 		}
 	}
 }

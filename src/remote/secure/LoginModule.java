@@ -1,6 +1,7 @@
 package remote.secure;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Map;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -10,18 +11,18 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
+import remote.RemoteFactory;
 import secure.Principal;
 
 public class LoginModule implements javax.security.auth.spi.LoginModule {
 	// initial state
 	private Subject subject;
 	private CallbackHandler callbackHandler;
-	private Map sharedState;
-	private Map options;
 
 	// configurable option
 	private boolean debug;
 	private String user;
+	private RemoteFactory factory;
 
 	// the authentication status
 	private boolean succeeded;
@@ -34,14 +35,17 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 	// testUser's Principal
 	private Principal userPrincipal;
 
-	public void initialize(final Subject subject, final CallbackHandler callbackHandler, final Map sharedState, final Map options) {
+	public void initialize(final Subject subject, final CallbackHandler callbackHandler, final Map<String, ?> sharedState, final Map<String, ?> options) {
 		this.subject = subject;
 		this.callbackHandler = callbackHandler;
-		this.sharedState = sharedState;
-		this.options = options;
 		// initialize any configured options
 		debug = "true".equalsIgnoreCase((String) options.get("debug"));
-		user = (String)options.get("user");
+		user = (String) options.get("user");
+		try {
+			factory = RemoteFactory.apply((String) options.get("url"));
+		} catch (final IOException | URISyntaxException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public boolean login() throws LoginException {
@@ -52,8 +56,8 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		}
 		final Callback[] callbacks = new Callback[2];
 		try {
-			callbacks[0] = new LocalNameCallback("user name: ");
-			callbacks[1] = new LocalPasswordCallback("password: ", false);
+			callbacks[0] = new LocalNameCallback(factory, "user name: ");
+			callbacks[1] = new LocalPasswordCallback(factory, "password: ", false);
 			callbackHandler.handle(callbacks);
 			username = ((NameCallback) callbacks[0]).getName();
 			char[] tmpPassword = ((PasswordCallback) callbacks[1]).getPassword();

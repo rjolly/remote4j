@@ -17,12 +17,12 @@ public class RemoteSecure<T> {
 		private final RemoteFactory factory;
 		private final CallbackHandler handler;
 
-		public Factory(final CallbackHandler handler) throws RemoteException {
+		public Factory(final CallbackHandler handler) throws IOException {
 			this(Remote.factory, handler);
 		}
 
-		public Factory(final RemoteFactory factory, final CallbackHandler handler) throws RemoteException {
-			this.handler = new CallbackHandlerStub(handler);
+		public Factory(final RemoteFactory factory, final CallbackHandler handler) throws IOException {
+			this.handler = new CallbackHandlerStub(factory, handler);
 			this.factory = factory;
 		}
 
@@ -68,11 +68,13 @@ public class RemoteSecure<T> {
 	}
 }
 
+@SuppressWarnings("serial")
 class CallbackHandlerStub extends Remote.Stub<CallbackHandler> implements CallbackHandler {
 	private final Remote<CallbackHandler> value;
 
-	public CallbackHandlerStub(final CallbackHandler handler) throws RemoteException {
-		value = Remote.apply(handler);
+	CallbackHandlerStub(final RemoteFactory factory, final CallbackHandler handler) throws IOException {
+		super(factory);
+		value = factory.apply(handler);
 	}
 
 	public final Remote<CallbackHandler> getValue() {

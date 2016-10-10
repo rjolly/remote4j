@@ -1,22 +1,27 @@
 package remote.secure;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.NoSuchObjectException;
-import java.rmi.server.UnicastRemoteObject;
 import javax.security.auth.callback.NameCallback;
 import remote.Remote;
+import remote.RemoteFactory;
 
+@SuppressWarnings("serial")
 class LocalNameCallback extends NameCallback {
 	private final Remote<NameCallback> callback;
+	transient private final RemoteFactory factory;
 
-	LocalNameCallback(final String prompt) throws RemoteException {
+	LocalNameCallback(final RemoteFactory factory, final String prompt) throws IOException {
 		super(prompt);
-		callback = Remote.apply(new NameCallback(prompt));
+		callback = factory.apply(new NameCallback(prompt));
+		this.factory = factory;
 	}
 
-	LocalNameCallback(final String prompt, final String defaultName) throws RemoteException {
+	LocalNameCallback(final RemoteFactory factory, final String prompt, final String defaultName) throws IOException {
 		super(prompt, defaultName);
-		callback = Remote.apply(new NameCallback(prompt, defaultName));
+		callback = factory.apply(new NameCallback(prompt, defaultName));
+		this.factory = factory;
 	}
 
 	@Override
@@ -59,6 +64,6 @@ class LocalNameCallback extends NameCallback {
 	}
 
 	public boolean unexport() throws NoSuchObjectException {
-		return UnicastRemoteObject.unexportObject(callback, true);
+		return factory.unexport(callback);
 	}
 }

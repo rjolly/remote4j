@@ -22,7 +22,7 @@ public class Secure<T> {
 					break;
 				} catch (final LoginException le) {
 					try {
-						Thread.currentThread().sleep(3000);
+						Thread.sleep(3000);
 					} catch (final InterruptedException e) {
 					}
 				}
