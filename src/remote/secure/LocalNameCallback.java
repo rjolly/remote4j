@@ -1,6 +1,8 @@
 package remote.secure;
 
 import java.rmi.RemoteException;
+import java.rmi.NoSuchObjectException;
+import java.rmi.server.UnicastRemoteObject;
 import javax.security.auth.callback.NameCallback;
 import remote.Remote;
 
@@ -54,5 +56,9 @@ class LocalNameCallback extends NameCallback {
 		} catch (final RemoteException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public boolean unexport() throws NoSuchObjectException {
+		return UnicastRemoteObject.unexportObject(callback, true);
 	}
 }

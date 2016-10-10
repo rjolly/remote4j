@@ -7,6 +7,8 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.NoSuchObjectException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -65,6 +67,10 @@ public interface Remote<T> extends java.rmi.Remote {
 			} catch (final RemoteException e) {
 				throw new RuntimeException(e);
 			}
+		}
+
+		public boolean unexport() throws NoSuchObjectException {
+			return UnicastRemoteObject.unexportObject(getValue(), true);
 		}
 	}
 }

@@ -64,7 +64,8 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 			password = new char[tmpPassword.length];
 			System.arraycopy(tmpPassword, 0, password, 0, tmpPassword.length);
 			((PasswordCallback) callbacks[1]).clearPassword();
-
+			((LocalNameCallback) callbacks[0]).unexport();
+			((LocalPasswordCallback) callbacks[1]).unexport();
 		} catch (final IOException ioe) {
 			throw new LoginException(ioe.toString());
 		} catch (final UnsupportedCallbackException uce) {

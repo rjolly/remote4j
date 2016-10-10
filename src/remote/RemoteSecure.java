@@ -32,13 +32,15 @@ public class RemoteSecure<T> {
 
 		public <T> RemoteSecure<T> lookup(final String name) throws IOException, NotBoundException {
 			final CallbackHandler handler = this.handler;
-			return apply(factory.<T>lookup(name).map(t -> {
+			final RemoteSecure<T> obj = apply(factory.<T>lookup(name).map(t -> {
 				try {
 					return new Secure.Factory(handler).apply(t);
 				} catch (final LoginException ex) {
 					throw new RemoteException("login exception", ex);
 				}
 			}));
+			((CallbackHandlerStub) handler).unexport();
+			return obj;
 		}
 	}
 

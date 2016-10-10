@@ -1,6 +1,8 @@
 package remote.secure;
 
 import java.rmi.RemoteException;
+import java.rmi.NoSuchObjectException;
+import java.rmi.server.UnicastRemoteObject;
 import javax.security.auth.callback.PasswordCallback;
 import remote.Remote;
 
@@ -61,5 +63,9 @@ class LocalPasswordCallback extends PasswordCallback {
 		} catch (final RemoteException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public boolean unexport() throws NoSuchObjectException {
+		return UnicastRemoteObject.unexportObject(callback, true);
 	}
 }
