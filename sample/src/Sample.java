@@ -16,7 +16,7 @@ public class Sample {
 		});
 		observable.map(obs -> {
 			obs.notifyObservers();
-			return null;
+			return Remote.VOID;
 		});
 	}
 }
@@ -43,7 +43,7 @@ class ObserverStub extends Remote.Stub<Observer> implements Observer {
 		try {
 			value.map(b -> {
 				b.update(o, arg);
-				return null;
+				return Remote.VOID;
 			});
 		} catch (final RemoteException e) {
 			e.printStackTrace();

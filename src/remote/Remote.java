@@ -17,12 +17,16 @@ public interface Remote<T> extends java.rmi.Remote {
 	public <S> Remote<S> flatMap(Function<T, Remote<S>> f) throws RemoteException;
 	public T get() throws RemoteException;
 
-	static final Factory factory = new Factory();
+	public static final Object VOID = new Object();
+	public static final Factory factory = new Factory();
 
-	static class Factory implements RemoteFactory {
+	public static class Factory implements RemoteFactory {
 		final Map<Remote<?>, Reference<Remote<?>>> cache = new WeakHashMap<>();
 
 		public <T> Remote<T> apply(T value) throws RemoteException {
+			if (value == VOID) {
+				return null;
+			}
 			final Remote<T> obj = new RemoteImpl<>(value);
 			cache.put(obj, new WeakReference<>(obj));
 			return obj;

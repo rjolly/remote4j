@@ -37,7 +37,7 @@ class LocalPasswordCallback extends PasswordCallback {
 		try {
 			callback.map(c -> {
 				c.setPassword(password);
-				return null;
+				return Remote.VOID;
 			});
 		} catch (final RemoteException e) {
 			e.printStackTrace();
@@ -58,7 +58,7 @@ class LocalPasswordCallback extends PasswordCallback {
 		try {
 			callback.map(c -> {
 				c.clearPassword();
-				return null;
+				return Remote.VOID;
 			});
 		} catch (final RemoteException e) {
 			e.printStackTrace();

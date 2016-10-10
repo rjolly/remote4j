@@ -124,7 +124,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	public <T> Remote<T> apply(final T value) {
-		return apply(value, nextObjNum());
+		return value == Remote.VOID?null:apply(value, nextObjNum());
 	}
 
 	<T> Remote<T> apply(final T value, final long num) {

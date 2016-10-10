@@ -42,7 +42,7 @@ class LocalNameCallback extends NameCallback {
 		try {
 			callback.map(c -> {
 				c.setName(name);
-				return null;
+				return Remote.VOID;
 			});
 		} catch (final RemoteException e) {
 			e.printStackTrace();

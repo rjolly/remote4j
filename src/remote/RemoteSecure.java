@@ -83,7 +83,7 @@ class CallbackHandlerStub extends Remote.Stub<CallbackHandler> implements Callba
 		value.map(h -> {
 			try {
 				h.handle(callbacks);
-				return null;
+				return Remote.VOID;
 			} catch (final IOException | UnsupportedCallbackException e) {
 				throw new RemoteException("handle error", e);
 			}

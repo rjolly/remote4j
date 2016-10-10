@@ -51,7 +51,7 @@ In some cases, the code will need to travel in the opposite direction (from serv
 				try {
 					value.map(b -> {
 						b.update(o, arg); // variable o is sent accross the network, so it needs to be serializable (*)
-						return null;
+						return Remote.VOID;
 					});
 				} catch (final RemoteException e) {
 					e.printStackTrace();
@@ -79,7 +79,7 @@ When the remote observable object is changed, it sends a notification to its rem
 
 		observable.map(obs -> {
 			obs.notifyObservers();
-			return null;
+			return Remote.VOID;
 		});
 
 The string "notified" is printed on the client side.
