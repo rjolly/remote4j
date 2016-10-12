@@ -11,6 +11,7 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
+import remote.Remote;
 import remote.RemoteFactory;
 import secure.Principal;
 
@@ -41,8 +42,9 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		// initialize any configured options
 		debug = "true".equalsIgnoreCase((String) options.get("debug"));
 		user = (String) options.get("user");
+		final String str = (String) options.get("url");
 		try {
-			factory = RemoteFactory.apply((String) options.get("url"));
+			factory = str == null?Remote.factory:RemoteFactory.apply(str);
 		} catch (final IOException | URISyntaxException e) {
 			e.printStackTrace();
 		}
