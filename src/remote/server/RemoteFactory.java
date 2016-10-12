@@ -153,6 +153,9 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	public <T> boolean unexport(final Remote<T> obj) {
-		return true;
+		if (obj instanceof RemoteObject) {
+			return objs.remove(((RemoteObject) obj).getNum()) != null;
+		}
+		return false;
 	}
 }
