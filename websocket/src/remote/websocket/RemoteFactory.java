@@ -48,7 +48,7 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 		}
 	}
 
-	protected void send(final String id, final byte array[]) throws IOException {
+	protected synchronized void send(final String id, final byte array[]) throws IOException {
 		final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
 		oos.writeObject(id);
 		oos.writeObject(array);
@@ -71,9 +71,8 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 
 	@ClientEndpoint
 	public class Endpoint {
-
 		@OnOpen
-		public void onOpen(final Session p) throws IOException {
+		public void onOpen(final Session p) {
 			session = p;
 		}
 

@@ -14,15 +14,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
 import remote.Remote;
 
 public abstract class RemoteFactory implements remote.RemoteFactory {
-	private final Map<Long, CountDownLatch> latches = new HashMap<>();
-	private final Map<Long, Throwable> exceptions = new HashMap<>();
-	private final Map<Long, Object> returns = new HashMap<>();
+	private final Map<Long, CountDownLatch> latches = Collections.synchronizedMap(new HashMap<>());
+	private final Map<Long, Throwable> exceptions = Collections.synchronizedMap(new HashMap<>());
+	private final Map<Long, Object> returns = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
 	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
 	private final Random random = new SecureRandom();
@@ -30,6 +31,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final AtomicLong nextCallId = new AtomicLong(0);
 	private final DGCClient client = new DGCClient(this);
 	private final DGC dgc = new DGC(this);
+	private final ExecutorService executor = Executors.newCachedThreadPool();
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(nextCallId.getAndIncrement(), num, method, types, args);
@@ -50,6 +52,21 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	protected abstract void send(final String id, final byte array[]) throws IOException;
+
+	private void process(final MethodCall call, final String id) throws IOException {
+		final Remote<?> target = objs.get(call.getNum());
+		try {
+			final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
+			final Object value = method.invoke(target, call.getArgs());
+			final Return ret = new Return(value, call.getId());
+			send(id, marshall(ret));
+		} catch (final InvocationTargetException e) {
+			final Exception exc = new Exception(e.getTargetException(), call.getId());
+			send(id, marshall(exc));
+		} catch (final ReflectiveOperationException e) {
+			e.printStackTrace();
+		}
+	}
 
 	byte[] marshall(final Object obj) throws IOException {
 		final ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -72,29 +89,29 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	protected final void receive(final String id, final byte array[]) throws IOException {
 		final Object message = unmarshall(array);
 		if (message instanceof MethodCall) {
-			final MethodCall call = (MethodCall) message;
-			final Remote<?> target = objs.get(call.getNum());
-			try {
-				final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
-				final Object value = method.invoke(target, call.getArgs());
-				final Return ret = new Return(value, call.getId());
-				send(id, marshall(ret));
-			} catch (final InvocationTargetException e) {
-				final Exception exc = new Exception(e.getTargetException(), call.getId());
-				send(id, marshall(exc));
-			} catch (final ReflectiveOperationException e) {
-				e.printStackTrace();
-			}
+			executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						process((MethodCall) message, id);
+					} catch (final IOException e) {
+						e.printStackTrace();
+					}
+				}
+			});
 		} else if (message instanceof Return) {
-			final Return ret = (Return) message;
-			final long relatesTo = ret.getRelatesTo();
-			if (ret instanceof Exception) {
-				exceptions.put(relatesTo, ((Exception) ret).getValue());
-			} else {
-				returns.put(relatesTo, ret.getValue());
-			}
-			latches.get(relatesTo).countDown();
+			process((Return) message);
 		}
+	}
+
+	private void process(final Return ret) {
+		final long relatesTo = ret.getRelatesTo();
+		if (ret instanceof Exception) {
+			exceptions.put(relatesTo, ((Exception) ret).getValue());
+		} else {
+			returns.put(relatesTo, ret.getValue());
+		}
+		latches.get(relatesTo).countDown();
 	}
 
 	protected abstract String getId();
@@ -154,8 +171,20 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	public <T> boolean unexport(final Remote<T> obj) {
 		if (obj instanceof RemoteObject) {
-			return objs.remove(((RemoteObject) obj).getNum()) != null;
+			return remove(((RemoteObject) obj).getNum()) != null;
 		}
 		return false;
+	}
+
+	Remote<?> remove(final long num) {
+		final Remote<?> obj = objs.remove(num);
+		if (objs.size() == 1) {
+			release();
+		}
+		return obj;
+	}
+
+	void release() {
+		executor.shutdown();
 	}
 }

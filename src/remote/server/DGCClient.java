@@ -44,7 +44,7 @@ public class DGCClient {
 		}, 0, Long.valueOf(System.getProperty("sun.rmi.dgc.client.gcInterval", "3600000")));
 	}
 
-	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
+	synchronized Remote<?> cache(final RemoteImpl_Stub<?> obj) {
 		Remote<?> o;
 		final String id = obj.getId();
 		if (!caches.containsKey(id)) {

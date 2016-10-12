@@ -59,7 +59,7 @@ public class RemoteFactory  extends remote.server.RemoteFactory {
 	}
 
 	@Override
-	protected void send(final String id, final byte array[]) throws IOException {
+	protected synchronized void send(final String id, final byte array[]) throws IOException {
 		channel.send(getId() + ";" + encoder.encodeToString(array), id, "/mediator");
 	}
 
