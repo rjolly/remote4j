@@ -29,7 +29,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final AtomicLong nextObjNum = new AtomicLong(2);
 	private final AtomicLong nextCallId = new AtomicLong(0);
 	private final DGCClient client = new DGCClient(this);
-	private final DGC dgc = new DGC(this); 
+	private final DGC dgc = new DGC(this);
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(nextCallId.getAndIncrement(), num, method, types, args);
@@ -71,30 +71,30 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	protected final void receive(final String id, final byte array[]) throws IOException {
 		final Object message = unmarshall(array);
-			if (message instanceof MethodCall) {
-				final MethodCall call = (MethodCall) message;
-				final Remote<?> target = objs.get(call.getNum());
-				try {
-					final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
-					final Object value = method.invoke(target, call.getArgs());
-					final Return ret = new Return(value, call.getId());
-					send(id, marshall(ret));
-				} catch (final InvocationTargetException e) {
-					final Exception exc = new Exception(e.getTargetException(), call.getId());
-					send(id, marshall(exc));
-				} catch (final ReflectiveOperationException e) {
-					e.printStackTrace();
-				}
-			} else if (message instanceof Return) {
-				final Return ret = (Return) message;
-				final long relatesTo = ret.getRelatesTo();
-				if (ret instanceof Exception) {
-					exceptions.put(relatesTo, ((Exception) ret).getValue());
-				} else {
-					returns.put(relatesTo, ret.getValue());
-				}
-				latches.get(relatesTo).countDown();
+		if (message instanceof MethodCall) {
+			final MethodCall call = (MethodCall) message;
+			final Remote<?> target = objs.get(call.getNum());
+			try {
+				final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
+				final Object value = method.invoke(target, call.getArgs());
+				final Return ret = new Return(value, call.getId());
+				send(id, marshall(ret));
+			} catch (final InvocationTargetException e) {
+				final Exception exc = new Exception(e.getTargetException(), call.getId());
+				send(id, marshall(exc));
+			} catch (final ReflectiveOperationException e) {
+				e.printStackTrace();
 			}
+		} else if (message instanceof Return) {
+			final Return ret = (Return) message;
+			final long relatesTo = ret.getRelatesTo();
+			if (ret instanceof Exception) {
+				exceptions.put(relatesTo, ((Exception) ret).getValue());
+			} else {
+				returns.put(relatesTo, ret.getValue());
+			}
+			latches.get(relatesTo).countDown();
+		}
 	}
 
 	protected abstract String getId();
