@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
-
 import remote.Remote;
 
 public class DGCClient {
@@ -104,10 +103,16 @@ public class DGCClient {
 			final Long cs[] = getCollected(id);
 			final Long ds[] = getLive(id);
 			if (cs.length > 0) {
-				dgc.map(a -> a.clean(cs, localId));
+				dgc.map(a -> {
+					a.clean(cs, localId);
+					return Remote.VOID;
+				});
 			}
 			if (ds.length > 0) {
-				dgc.map(a -> a.dirty(ds, localId, duration));
+				dgc.map(a -> {
+					a.dirty(ds, localId, duration);
+					return Remote.VOID;
+				});
 			}
 			removeCollected(id, cs);
 		}
