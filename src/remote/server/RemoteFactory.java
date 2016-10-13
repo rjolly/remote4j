@@ -89,14 +89,11 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	protected final void receive(final String id, final byte array[]) throws IOException {
 		final Object message = unmarshall(array);
 		if (message instanceof MethodCall) {
-			executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						process((MethodCall) message, id);
-					} catch (final IOException e) {
-						e.printStackTrace();
-					}
+			executor.execute(() -> {
+				try {
+					process((MethodCall) message, id);
+				} catch (final IOException e) {
+					e.printStackTrace();
 				}
 			});
 		} else if (message instanceof Return) {
