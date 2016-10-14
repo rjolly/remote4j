@@ -36,12 +36,16 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(nextCallId.getAndIncrement(), num, method, types, args);
 		final long callId = call.getId();
+		final boolean success;
 		try {
 			send(id, marshall(call));
 			latches.put(callId, new CountDownLatch(1));
-			latches.get(callId).await(100, TimeUnit.SECONDS);
+			success = latches.get(callId).await(100, TimeUnit.SECONDS);
 		} catch (final IOException | InterruptedException e) {
 			throw new RemoteException("invocation error", e);
+		}
+		if (!success) {
+			throw new RemoteException("timeout");
 		}
 		latches.remove(callId);
 		if (exceptions.containsKey(callId)) {
