@@ -1,6 +1,7 @@
 package remote;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import javax.security.auth.callback.Callback;
@@ -21,7 +22,11 @@ public class RemoteSecure<T> {
 			this(Remote.factory, handler);
 		}
 
-		public Factory(final RemoteFactory factory, final CallbackHandler handler) throws IOException {
+		public Factory(final String str, final CallbackHandler handler) throws IOException, URISyntaxException {
+			this(RemoteFactory.apply(str), handler);
+		}
+
+		private Factory(final RemoteFactory factory, final CallbackHandler handler) throws IOException {
 			this.handler = new CallbackHandlerStub(factory, handler);
 			this.factory = factory;
 		}
