@@ -28,11 +28,7 @@ public class DGCClient {
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				try {
-					gc();
-				} catch (final RemoteException e) {
-					e.printStackTrace();
-				}
+				gc();
 			}
 		}, 0, value >> 1);
 		timerGc.schedule(new TimerTask() {
@@ -95,24 +91,28 @@ public class DGCClient {
 		return live.get(id).toArray(new Long[0]);
 	}
 
-	void gc() throws RemoteException {
+	void gc() {
 		final String localId = factory.getId();
 		final long duration = value;
 		for (final String id : getIds()) {
 			final Remote<DGC> dgc = getRemote(id);
 			final Long cs[] = getCollected(id);
 			final Long ds[] = getLive(id);
-			if (cs.length > 0) {
+			if (cs.length > 0) try {
 				dgc.map(a -> {
 					a.clean(cs, localId);
 					return Remote.VOID;
 				});
+			} catch (final RemoteException e) {
+				e.printStackTrace();
 			}
-			if (ds.length > 0) {
+			if (ds.length > 0) try {
 				dgc.map(a -> {
 					a.dirty(ds, localId, duration);
 					return Remote.VOID;
 				});
+			} catch (final RemoteException e) {
+				e.printStackTrace();
 			}
 			removeCollected(id, cs);
 		}
