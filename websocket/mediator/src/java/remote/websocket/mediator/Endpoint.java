@@ -22,6 +22,7 @@ public class Endpoint {
 	private String id;
 
 	@OnOpen
+	@SuppressWarnings("unchecked")
 	public void onOpen(final Session session, final EndpointConfig config) throws IOException {
 		final Map<String, Object> props = config.getUserProperties();
 		if (!props.containsKey("map")) {
@@ -39,11 +40,13 @@ public class Endpoint {
 	public void onMessage(final InputStream is) throws IOException {
 		try (final ObjectInputStream ois = new ObjectInputStream(is)) {
 			final String recipientId = (String)ois.readObject();
-			final Session recipient = map.get(recipientId);
 			final Object obj = ois.readObject();
-			final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream());
-			oos.writeObject(id);
-			oos.writeObject(obj);
+			if (map.containsKey(recipientId)) {
+				final Session recipient = map.get(recipientId);
+				final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream());
+				oos.writeObject(id);
+				oos.writeObject(obj);
+			}
 		} catch (final ClassNotFoundException e) {
 			e.printStackTrace();
 		}
