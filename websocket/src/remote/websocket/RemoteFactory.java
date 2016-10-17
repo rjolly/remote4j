@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
+import java.rmi.RemoteException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
 import javax.websocket.DeploymentException;
@@ -14,7 +14,6 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
-
 import remote.spi.RemoteFactoryProvider;
 
 public class RemoteFactory extends remote.server.RemoteFactory {
@@ -40,11 +39,15 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 	}
 
 	RemoteFactory(final URI uri) throws IOException {
+		final boolean success;
 		try {
 			client.connectToServer(new Endpoint(), uri);
-			messageLatch.await(100, TimeUnit.SECONDS);
+			success = messageLatch.await(100, TimeUnit.SECONDS);
 		} catch (final DeploymentException | InterruptedException e) {
-			e.printStackTrace();
+			throw new RemoteException("connection error", e);
+		}
+		if (!success) {
+			throw new RemoteException("timeout");
 		}
 	}
 
@@ -87,7 +90,7 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 					receive(senderId, (byte[]) ois.readObject());
 				}
 			} catch (final ClassNotFoundException e) {
-				e.printStackTrace();
+				throw new RemoteException("deserialization error", e);
 			}
 		}
 	}

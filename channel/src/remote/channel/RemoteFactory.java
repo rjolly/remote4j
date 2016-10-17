@@ -2,10 +2,11 @@ package remote.channel;
 
 import java.io.IOException;
 import java.net.URI;
+import java.rmi.RemoteException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Random;
-
+import java.util.logging.Logger;
 import remote.spi.RemoteFactoryProvider;
 import edu.gvsu.cis.masl.channelAPI.ChannelAPI;
 import edu.gvsu.cis.masl.channelAPI.ChannelAPI.ChannelException;
@@ -16,6 +17,7 @@ public class RemoteFactory  extends remote.server.RemoteFactory {
 	private static final Base64.Encoder encoder = Base64.getUrlEncoder();
 	private static final Base64.Decoder decoder = Base64.getUrlDecoder();
 	static final String registryId = encoder.encodeToString(new byte[12]);
+	private final Logger logger = Logger.getLogger(getClass().getName());
 	private final ChannelAPI channel;
 	private final String id;
 
@@ -54,7 +56,7 @@ public class RemoteFactory  extends remote.server.RemoteFactory {
 		try {
 			channel.open();
 		} catch (final ChannelException e) {
-			e.printStackTrace();
+			throw new RemoteException("connection error", e);
 		}
 	}
 
@@ -89,7 +91,7 @@ public class RemoteFactory  extends remote.server.RemoteFactory {
 			try {
 				receive(message.substring(0, n), decoder.decode(message.substring(n + 1)));
 			} catch (final IOException e) {
-				e.printStackTrace();
+				logger.info(e.toString());
 			}
 		}
 

@@ -18,19 +18,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 import remote.Remote;
 
 public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, CountDownLatch> latches = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Throwable> exceptions = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Object> returns = Collections.synchronizedMap(new HashMap<>());
-	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
+	final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
 	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
 	private final Random random = new SecureRandom();
 	private final AtomicLong nextObjNum = new AtomicLong(2);
 	private final AtomicLong nextCallId = new AtomicLong(0);
-	private final DGCClient client = new DGCClient(this);
+	final DGCClient client = new DGCClient(this);
 	private final DGC dgc = new DGC(this);
+	final Logger logger = Logger.getLogger(getClass().getName());
 	private final ExecutorService executor = Executors.newCachedThreadPool();
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
@@ -68,7 +70,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 			final Exception exc = new Exception(e.getTargetException(), call.getId());
 			send(id, marshall(exc));
 		} catch (final ReflectiveOperationException e) {
-			e.printStackTrace();
+			throw new RemoteException("reflection error", e);
 		}
 	}
 
@@ -84,8 +86,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		Object obj = null;
 		try (final ObjectInputStream ois = new InputStream(new ByteArrayInputStream(array), this)) {
 			obj = ois.readObject();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+		} catch (final ClassNotFoundException e) {
+			throw new RemoteException("deserialization error", e);
 		}
 		return obj;
 	}
@@ -97,7 +99,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 				try {
 					process((MethodCall) message, id);
 				} catch (final IOException e) {
-					e.printStackTrace();
+					logger.info(e.toString());
 				}
 			});
 		} else if (message instanceof Return) {
@@ -129,14 +131,6 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		apply(dgc, 1);
 	}
 
-	Map<Long, Remote<?>> getObjects() {
-		return objs;
-	}
-
-	DGCClient getClient() {
-		return client;
-	}
-
 	private long nextObjNum() {
 		return secure?random.nextLong():nextObjNum.getAndIncrement();
 	}
@@ -147,7 +141,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	<T> Remote<T> apply(final T value, final long num) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
-		if (num > 1 && !dgc.started) {
+		if (num != 1 && !dgc.started) {
 			dgc.start();
 		}
 		dgc.dirty(new Long[] {num}, getId(), client.value);

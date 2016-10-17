@@ -50,7 +50,7 @@ public class DGCClient {
 		if (w == null || (o = w.get()) == null) {
 			cache.put(obj, new WeakReference<>(obj));
 			dirty(id, obj.getNum());
-			obj.setState(true);
+			obj.state = true;
 			return obj;
 		} else {
 			return o;
@@ -104,7 +104,7 @@ public class DGCClient {
 					return Remote.VOID;
 				});
 			} catch (final RemoteException e) {
-				e.printStackTrace();
+				factory.logger.info(e.toString());
 			}
 			if (ds.length > 0) try {
 				dgc.map(a -> {
@@ -112,7 +112,7 @@ public class DGCClient {
 					return Remote.VOID;
 				});
 			} catch (final RemoteException e) {
-				e.printStackTrace();
+				factory.logger.info(e.toString());
 			}
 			removeCollected(id, cs);
 		}
