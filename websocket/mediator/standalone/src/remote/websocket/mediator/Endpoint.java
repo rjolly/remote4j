@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
@@ -48,7 +48,7 @@ public class Endpoint {
 				oos.writeObject(obj);
 			}
 		} catch (final ClassNotFoundException e) {
-			e.printStackTrace();
+			throw new RemoteException("deserialization error", e);
 		}
 	}
 
