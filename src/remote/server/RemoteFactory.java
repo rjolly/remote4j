@@ -147,6 +147,9 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	<T> Remote<T> apply(final T value, final long num) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
+		if (num > 1 && !dgc.started) {
+			dgc.start();
+		}
 		dgc.dirty(new Long[] {num}, getId(), client.value);
 		objs.put(num, obj);
 		return obj;
@@ -186,6 +189,9 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	void release() {
+		if (dgc.started) {
+			dgc.stop();
+		}
 		executor.shutdown();
 	}
 }

@@ -8,20 +8,25 @@ import java.util.TimerTask;
 import remote.Remote;
 
 public class DGC {
-	private final Timer timer = new Timer(true);
+	private Timer timer;
 	private final Map<Long, Map<String, Long>> leases = new HashMap<>();
 	private final Map<Long, Remote<?>> objs;
 	private final RemoteFactory factory;
+	boolean started;
 
 	DGC(final RemoteFactory factory) {
 		objs = factory.getObjects();
 		this.factory = factory;
-		timer.schedule(new TimerTask() {
+	}
+
+	void start() {
+		(timer = new Timer()).schedule(new TimerTask() {
 			@Override
 			public void run() {
 				check();
 			}
 		}, 0, Long.valueOf(System.getProperty("sun.rmi.dgc.checkInterval", String.valueOf(factory.getClient().value >> 1))));
+		started = true;
 	}
 
 	void check() {
@@ -80,5 +85,10 @@ public class DGC {
 			}
 			return c;
 		}
+	}
+
+	void stop() {
+		started = false;
+		timer.cancel();
 	}
 }
