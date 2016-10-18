@@ -2,7 +2,10 @@ package remote.secure;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Map;
+import java.util.logging.Logger;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -19,11 +22,12 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 	// initial state
 	private Subject subject;
 	private CallbackHandler callbackHandler;
+	private final Logger logger = Logger.getLogger(getClass().getName());
 
 	// configurable option
 	private boolean debug;
-	private String user;
 	private RemoteFactory factory;
+	private Remote<Authenticator> auth;
 
 	// the authentication status
 	private boolean succeeded;
@@ -41,12 +45,13 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		this.callbackHandler = callbackHandler;
 		// initialize any configured options
 		debug = "true".equalsIgnoreCase((String) options.get("debug"));
-		user = (String) options.get("user");
 		final String str = (String) options.get("url");
+		final String name = (String) options.get("name");
 		try {
 			factory = str == null?Remote.factory:RemoteFactory.apply(str);
-		} catch (final IOException | URISyntaxException e) {
-			e.printStackTrace();
+			auth = factory.lookup(name == null?"auth":name);
+		} catch (final IOException | URISyntaxException | NotBoundException e) {
+			logger.info(e.toString());
 		}
 	}
 
@@ -73,7 +78,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 			((LocalNameCallback) callbacks[0]).unexport();
 			((LocalPasswordCallback) callbacks[1]).unexport();
 		} catch (final IOException ioe) {
-			throw new LoginException(ioe.toString());
+			throw (LoginException) new LoginException().initCause(ioe);
 		} catch (final UnsupportedCallbackException uce) {
 			throw new LoginException("Error: " + uce.getCallback().toString() +
 				" not available to garner authentication information " +
@@ -94,9 +99,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		// verify the username/password
 		boolean usernameCorrect = false;
 		boolean passwordCorrect = false;
-		boolean success = false;
-		success = username.equals(user);
-		if(success) {
+		if(authenticate(username, password)) {
 			usernameCorrect = true;
 			// authentication succeeded!!!
 			passwordCorrect = true;
@@ -125,6 +128,14 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 			} else {
 				throw new FailedLoginException("User Name or Password Incorrect");
 			}
+		}
+	}
+
+	private boolean authenticate(final String username, final char[] password) throws LoginException {
+		try {
+			return auth.map(a -> a.authenticate(username, password)).get();
+		} catch (final RemoteException e) {
+			throw (LoginException) new LoginException().initCause(e);
 		}
 	}
 
