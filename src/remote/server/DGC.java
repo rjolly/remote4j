@@ -1,6 +1,5 @@
 package remote.server;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -11,13 +10,13 @@ public class DGC {
 	private Timer timer;
 	private final Map<Long, Map<String, Long>> leases = new HashMap<>();
 	private final RemoteFactory factory;
-	boolean started;
+	private boolean started;
 
 	DGC(final RemoteFactory factory) {
 		this.factory = factory;
 	}
 
-	void start() {
+	private void start() {
 		(timer = new Timer()).schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -51,7 +50,14 @@ public class DGC {
 		}
 	}
 
-	public boolean dirty(final Collection<Long> nums, final String id, final long duration) {
+	boolean dirty(final long num, final String id, final long duration) {
+		if (num != 1 && !started) {
+			start();
+		}
+		return dirty(new Long[] {num}, id, duration);
+	}
+
+	public boolean dirty(final Long nums[], final String id, final long duration) {
 		synchronized(factory.objs) {
 			final long t = System.currentTimeMillis() + duration;
 			boolean c = true;
@@ -68,7 +74,7 @@ public class DGC {
 		}
 	}
 
-	public boolean clean(final Collection<Long> nums, final String id) {
+	public boolean clean(final Long nums[], final String id) {
 		synchronized(factory.objs) {
 			boolean c = true;
 			for (final long num : nums) {
@@ -86,7 +92,9 @@ public class DGC {
 	}
 
 	void stop() {
-		started = false;
-		timer.cancel();
+		if (started) {
+			started = false;
+			timer.cancel();
+		}
 	}
 }
