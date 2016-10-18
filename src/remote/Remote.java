@@ -33,7 +33,7 @@ public interface Remote<T> extends java.rmi.Remote {
 		}
 
 		Remote<?> replace(final Remote<?> obj) {
-			Remote<?> o;
+			final Remote<?> o;
 			final Reference<Remote<?>> w = cache.get(obj);
 			return w == null || (o = w.get()) == null? obj : o;
 		}

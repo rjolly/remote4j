@@ -40,7 +40,7 @@ public class DGCClient {
 	}
 
 	synchronized Remote<?> cache(final RemoteImpl_Stub<?> obj) {
-		Remote<?> o;
+		final Remote<?> o;
 		final String id = obj.getId();
 		if (!caches.containsKey(id)) {
 			caches.put(id, new WeakHashMap<>());

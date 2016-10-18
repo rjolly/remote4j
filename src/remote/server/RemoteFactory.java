@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.rmi.RemoteException;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -35,6 +36,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final DGC dgc = new DGC(this);
 	final Logger logger = Logger.getLogger(getClass().getName());
 	private final ExecutorService executor = Executors.newCachedThreadPool();
+	private final URI uri;
 
 	Object invoke(final String id, final long num, final String method, final Class<?> types[], final Object args[]) throws RemoteException {
 		final MethodCall call = new MethodCall(nextCallId.getAndIncrement(), num, method, types, args);
@@ -128,8 +130,21 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	final Remote<Map<String, Remote<?>>> registry = new RemoteImpl_Stub<>(getRegistryId(), 0, this);
 
-	protected RemoteFactory() {
+	protected RemoteFactory(final URI uri) {
 		apply(dgc, 1);
+		this.uri = uri;
+	}
+
+	public String toString() {
+		return uri.toString();
+	}
+
+	public boolean equals(final Object obj) {
+		return obj instanceof RemoteFactory?uri.equals(((RemoteFactory) obj).uri):false;
+	}
+
+	public int hashCode() {
+		return uri.hashCode();
 	}
 
 	private long nextObjNum() {

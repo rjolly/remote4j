@@ -39,6 +39,7 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 	}
 
 	RemoteFactory(final URI uri) throws IOException {
+		super(uri);
 		final boolean success;
 		try {
 			client.connectToServer(new Endpoint(), uri);

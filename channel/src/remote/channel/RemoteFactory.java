@@ -48,6 +48,7 @@ public class RemoteFactory  extends remote.server.RemoteFactory {
 	}
 
 	RemoteFactory(final URI uri, final String id) throws IOException {
+		super(uri);
 		this.id = id;
 		if (getRegistryId().equals(id)) {
 			setRegistryId();
