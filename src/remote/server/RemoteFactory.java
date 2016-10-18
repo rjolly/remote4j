@@ -144,7 +144,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		if (num != 1 && !dgc.started) {
 			dgc.start();
 		}
-		dgc.dirty(new Long[] {num}, getId(), client.value);
+		dgc.dirty(new Long[] {num}, getId(), client.lease);
 		objs.put(num, obj);
 		return obj;
 	}

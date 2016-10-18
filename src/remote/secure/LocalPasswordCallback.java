@@ -23,8 +23,9 @@ class LocalPasswordCallback extends PasswordCallback {
 		try {
 			return callback.map(c -> c.getPrompt()).get();
 		} catch (final RemoteException e) {
-			throw new RuntimeException(e);
+			e.printStackTrace();
 		}
+		return null;
 	}
 
 	@Override
@@ -32,8 +33,9 @@ class LocalPasswordCallback extends PasswordCallback {
 		try {
 			return callback.map(c -> c.isEchoOn()).get();
 		} catch (final RemoteException e) {
-			throw new RuntimeException(e);
+			e.printStackTrace();
 		}
+		return false;
 	}
 
 	@Override
@@ -53,8 +55,9 @@ class LocalPasswordCallback extends PasswordCallback {
 		try {
 			return callback.map(c -> c.getPassword()).get();
 		} catch (final RemoteException e) {
-			throw new RuntimeException(e);
+			e.printStackTrace();
 		}
+		return null;
 	}
 
 	@Override

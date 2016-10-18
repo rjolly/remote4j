@@ -18,7 +18,7 @@ public class DGCClient {
 	private final Map<String, Collection<Long>> collected = new HashMap<>();
 	private final Map<String, Collection<Long>> live = new HashMap<>();
 	private final Map<String, Map<RemoteObject, Reference<Remote<?>>>> caches = new HashMap<>();
-	final long value = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
+	final long lease = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
 	private final Timer timerGc = new Timer(true);
 	private final Timer timer = new Timer(true);
 	private final RemoteFactory factory;
@@ -30,7 +30,7 @@ public class DGCClient {
 			public void run() {
 				gc();
 			}
-		}, 0, value >> 1);
+		}, 0, lease >> 1);
 		timerGc.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -93,7 +93,7 @@ public class DGCClient {
 
 	void gc() {
 		final String localId = factory.getId();
-		final long duration = value;
+		final long duration = lease;
 		for (final String id : getIds()) {
 			final Remote<DGC> dgc = getRemote(id);
 			final Long cs[] = getCollected(id);

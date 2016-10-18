@@ -34,14 +34,18 @@ public class RemoteFactory {
 
 	public <T> Remote<T> lookup(final String name) throws IOException, NotBoundException {
 		final CallbackHandler handler = this.handler;
-		final Remote<T> obj = apply(factory.<T>lookup(name).map(t -> {
-			try {
-				return new SecureFactory(handler).apply(t);
-			} catch (final LoginException ex) {
-				throw new RemoteException("login exception", ex);
-			}
-		}));
-		((CallbackHandlerStub) handler).unexport();
+		final Remote<T> obj;
+		try {
+			obj = apply(factory.<T>lookup(name).map(t -> {
+				try {
+					return new SecureFactory(handler).apply(t);
+				} catch (final LoginException ex) {
+					throw new RemoteException("login exception", ex);
+				}
+			}));
+		} finally {
+			((CallbackHandlerStub) handler).unexport();
+		}
 		return obj;
 	}
 }

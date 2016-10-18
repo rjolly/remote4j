@@ -29,8 +29,9 @@ class LocalNameCallback extends NameCallback {
 		try {
 			return callback.map(c -> c.getPrompt()).get();
 		} catch (final RemoteException e) {
-			throw new RuntimeException(e);
+			e.printStackTrace();
 		}
+		return null;
 	}
 
 	@Override
@@ -38,8 +39,9 @@ class LocalNameCallback extends NameCallback {
 		try {
 			return callback.map(c -> c.getDefaultName()).get();
 		} catch (final RemoteException e) {
-			throw new RuntimeException(e);
+			e.printStackTrace();
 		}
+		return null;
 	}
 
 	@Override
@@ -59,8 +61,9 @@ class LocalNameCallback extends NameCallback {
 		try {
 			return callback.map(c -> c.getName()).get();
 		} catch (final RemoteException e) {
-			throw new RuntimeException(e);
+			e.printStackTrace();
 		}
+		return null;
 	}
 
 	public boolean unexport() throws NoSuchObjectException {
