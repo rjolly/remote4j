@@ -1,5 +1,6 @@
 package remote.server;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class DGC {
 		}
 	}
 
-	public boolean dirty(final Long nums[], final String id, final long duration) {
+	public boolean dirty(final Collection<Long> nums, final String id, final long duration) {
 		synchronized(factory.objs) {
 			final long t = System.currentTimeMillis() + duration;
 			boolean c = true;
@@ -67,7 +68,7 @@ public class DGC {
 		}
 	}
 
-	public boolean clean(final Long nums[], final String id) {
+	public boolean clean(final Collection<Long> nums, final String id) {
 		synchronized(factory.objs) {
 			boolean c = true;
 			for (final long num : nums) {
