@@ -42,8 +42,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		final long callId = call.getId();
 		final boolean success;
 		try {
-			send(id, marshall(call));
 			latches.put(callId, new CountDownLatch(1));
+			send(id, marshall(call));
 			success = latches.get(callId).await(100, TimeUnit.SECONDS);
 		} catch (final IOException | InterruptedException e) {
 			throw new RemoteException("invocation error", e);
