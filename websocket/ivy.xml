@@ -21,8 +21,8 @@
         <artifact name="remote4j-websocket" type="pom" ext="pom" conf="pom"/>
     </publications>
     <dependencies>
-        <dependency org="com.github.rjolly" name="remote4j" rev="1.1" conf="compile->master"/>
-        <dependency org="javax.websocket" name="javax.websocket-api" rev="1.1" conf="compile->master"/>
+        <dependency org="com.github.rjolly" name="remote4j" rev="1.1" conf="compile->master;runtime->default"/>
+        <dependency org="javax.websocket" name="javax.websocket-api" rev="1.1" conf="compile->master;runtime->default"/>
         <dependency org="org.glassfish.tyrus" name="tyrus-container-jdk-client" rev="1.12" conf="runtime->default"/>
     </dependencies>
 </ivy-module>
