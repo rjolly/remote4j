@@ -30,9 +30,8 @@ public class Endpoint {
 		}
 		map = (Map<String, Session>) props.get("map");
 		id = map.isEmpty()?"00000000-0000-0000-0000-000000000000":session.getId();
-		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
-			oos.writeObject(id);
-		}
+		final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
+		oos.writeObject(id);
 		map.put(id, session);
 	}
 
