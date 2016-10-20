@@ -19,27 +19,29 @@ public interface RemoteFactory {
 	public <T> void rebind(String name, T value) throws IOException;
 	public <T> Remote<T> lookup(String name) throws IOException, NotBoundException;
 	public <T> boolean unexport(Remote<T> obj) throws NoSuchObjectException;
+	public URI getURI();
 
-	static final Map<RemoteFactory, Reference<RemoteFactory>> cache = new WeakHashMap<>();
+	static final Map<URI, Reference<RemoteFactory>> cache = new WeakHashMap<>();
 
 	public static RemoteFactory apply(final String str) throws IOException, URISyntaxException {
-		final URI uri = new URI(str);
-		for (final RemoteFactoryProvider provider : ServiceLoader.load(RemoteFactoryProvider.class)) {
-			if (Arrays.asList(provider.getSchemes()).contains(uri.getScheme())) {
-				return cache(provider.getFactory(uri));
-			}
-		}
-		return Remote.factory;
-	}
-
-	static RemoteFactory cache(final RemoteFactory obj) {
 		final RemoteFactory o;
-		final Reference<RemoteFactory> w = cache.get(obj);
+		final URI uri = new URI(str);
+		final Reference<RemoteFactory> w = cache.get(uri);
 		if (w == null || (o = w.get()) == null) {
-			cache.put(obj, new WeakReference<>(obj));
+			final RemoteFactory obj = apply(uri);
+			cache.put(obj.getURI(), new WeakReference<>(obj));
 			return obj;
 		} else {
 			return o;
 		}
+	}
+
+	static RemoteFactory apply(final URI uri) throws IOException {
+		for (final RemoteFactoryProvider provider : ServiceLoader.load(RemoteFactoryProvider.class)) {
+			if (Arrays.asList(provider.getSchemes()).contains(uri.getScheme())) {
+				return provider.getFactory(uri);
+			}
+		}
+		return Remote.factory;
 	}
 }

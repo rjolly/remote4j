@@ -134,16 +134,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		this.uri = uri;
 	}
 
-	public String toString() {
-		return uri.toString();
-	}
-
-	public boolean equals(final Object obj) {
-		return obj instanceof RemoteFactory?uri.equals(((RemoteFactory) obj).uri):false;
-	}
-
-	public int hashCode() {
-		return uri.hashCode();
+	public final URI getURI() {
+		return uri;
 	}
 
 	private long nextObjNum() {

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -21,7 +22,7 @@ public interface Remote<T> extends java.rmi.Remote {
 	public static final Factory factory = new Factory();
 
 	public static class Factory implements RemoteFactory {
-		final Map<Remote<?>, Reference<Remote<?>>> cache = new WeakHashMap<>();
+		private final Map<Remote<?>, Reference<Remote<?>>> cache = new WeakHashMap<>();
 
 		public <T> Remote<T> apply(final T value) throws RemoteException {
 			if (value == VOID) {
@@ -49,6 +50,10 @@ public interface Remote<T> extends java.rmi.Remote {
 
 		public <T> boolean unexport(final Remote<T> obj) throws NoSuchObjectException {
 			return UnicastRemoteObject.unexportObject(obj, true);
+		}
+
+		public URI getURI() {
+			return null;
 		}
 	}
 
