@@ -14,13 +14,13 @@ import java.util.WeakHashMap;
 import remote.Remote;
 
 public class DGCClient {
-	private Timer timer;
 	private final Map<String, Remote<DGC>> remotes = new HashMap<>();
 	private final Map<String, Collection<Long>> collected = new HashMap<>();
 	private final Map<String, Collection<Long>> live = new HashMap<>();
 	private final Map<String, Map<RemoteObject, Reference<Remote<?>>>> caches = new HashMap<>();
 	final long lease = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
 	private final RemoteFactory factory;
+	private Timer timer = new Timer(true);
 	private boolean started;
 
 	static {
@@ -34,10 +34,7 @@ public class DGCClient {
 
 	DGCClient(final RemoteFactory factory) {
 		this.factory = factory;
-	}
-
-	private void start() {
-		(timer = new Timer(true)).schedule(new TimerTask() {
+		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				gc();
@@ -70,9 +67,6 @@ public class DGCClient {
 	}
 
 	private synchronized void dirty(final String id, final long num) {
-		if (!started) {
-			start();
-		}
 		if (!remotes.containsKey(id)) {
 			remotes.put(id, factory.dgc(id));
 			collected.put(id, new LinkedHashSet<>());
