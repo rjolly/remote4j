@@ -52,10 +52,12 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 		}
 	}
 
-	protected synchronized void send(final String id, final byte array[]) throws IOException {
-		final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
-		oos.writeObject(id);
-		oos.writeObject(array);
+	protected void send(final String id, final byte array[]) throws IOException {
+		synchronized(session) {
+			final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
+			oos.writeObject(id);
+			oos.writeObject(array);
+		}
 	}
 
 	protected String getId() {
