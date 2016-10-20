@@ -186,7 +186,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return obj;
 	}
 
-	void release() {
+	private void release() {
 		dgc.stop();
 		executor.shutdown();
 	}
