@@ -33,12 +33,13 @@ public class DGCClient {
 
 	DGCClient(final RemoteFactory factory, final String id) {
 		dgc = new RemoteImpl_Stub<>(id, 1, factory);
+		final long n = factory.lease >> 1;
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				gc();
 			}
-		}, 0, factory.lease >> 1);
+		}, n, n);
 		this.factory = factory;
 	}
 
