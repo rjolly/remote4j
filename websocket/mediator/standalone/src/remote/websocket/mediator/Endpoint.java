@@ -38,18 +38,14 @@ public class Endpoint {
 	}
 
 	@OnMessage
-	public void onMessage(final InputStream is) throws IOException {
+	public void onMessage(final InputStream is, final Session session) throws IOException {
 		try (final ObjectInputStream ois = new ObjectInputStream(is)) {
 			final String recipientId = (String)ois.readObject();
 			final Object obj = ois.readObject();
-			if (map.containsKey(recipientId)) {
-				final Session recipient = map.get(recipientId);
-				final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream());
-				oos.writeObject(id);
-				oos.writeObject(obj);
-			} else {
-				throw new RemoteException("not found " + recipientId);
-			}
+			final Session recipient = map.containsKey(recipientId)?map.get(recipientId):session;
+			final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream());
+			oos.writeObject(id);
+			oos.writeObject(obj);
 		} catch (final ClassNotFoundException e) {
 			throw new RemoteException("deserialization error", e);
 		}

@@ -53,7 +53,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		}
 		latches.remove(callId);
 		if (exceptions.containsKey(callId)) {
-			throw new RemoteException("target exception", exceptions.remove(callId));
+			final Throwable ex = exceptions.remove(callId);
+			throw ex instanceof RemoteException?(RemoteException) ex:new RemoteException("target exception", ex);
 		} else {
 			return returns.remove(callId);
 		}
@@ -97,13 +98,18 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	protected final void receive(final String id, final byte array[]) throws IOException {
 		final Object message = unmarshall(array);
 		if (message instanceof MethodCall) {
-			executor.execute(() -> {
-				try {
-					process((MethodCall) message, id);
-				} catch (final IOException e) {
-					logger.info(e.toString());
-				}
-			});
+			final MethodCall call = (MethodCall) message;
+			if (id.equals(getId())) {
+				process(new Exception(new RemoteException("return to sender"), call.getId()));
+			} else {
+				executor.execute(() -> {
+					try {
+						process(call, id);
+					} catch (final IOException e) {
+						logger.info(e.toString());
+					}
+				});
+			}
 		} else if (message instanceof Return) {
 			process((Return) message);
 		}
