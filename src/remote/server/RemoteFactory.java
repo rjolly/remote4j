@@ -27,11 +27,12 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, Throwable> exceptions = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Object> returns = Collections.synchronizedMap(new HashMap<>());
 	final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
+	private final Map<String, DGCClient> clients = Collections.synchronizedMap(new HashMap<>());
 	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
+	final long lease = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
 	private final Random random = new SecureRandom();
 	private final AtomicLong nextObjNum = new AtomicLong(2);
 	private final AtomicLong nextCallId = new AtomicLong(0);
-	final DGCClient client = new DGCClient(this);
 	private final DGC dgc = new DGC(this);
 	final Logger logger = Logger.getLogger(getClass().getName());
 	private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -154,17 +155,25 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	<T> Remote<T> apply(final T value, final long num) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
-		dgc.dirty(num, getId(), client.lease);
+		dgc.dirty(num, getId(), lease);
 		objs.put(num, obj);
 		return obj;
 	}
 
 	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
-		return obj.getId().equals(getId()) ? objs.get(obj.getNum()) : client.cache(obj);
+		return obj.getId().equals(getId()) ? objs.get(obj.getNum()) : cache(obj);
 	}
 
-	Remote<DGC> dgc(final String id) {
-		return new RemoteImpl_Stub<>(id, 1, this);
+	private Remote<?> cache(final RemoteImpl_Stub<?> obj) {
+		final String id = obj.getId();
+		if (!clients.containsKey(id)) {
+			clients.put(id, new DGCClient(this, id));
+		}
+		return clients.get(id).cache(obj);
+	}
+
+	void clean(final RemoteImpl_Stub<?> obj) {
+		clients.get(obj.getId()).clean(obj.getNum());
 	}
 
 	public <T> void rebind(final String name, final T value) throws RemoteException {

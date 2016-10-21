@@ -23,7 +23,7 @@ public class DGC {
 			public void run() {
 				check();
 			}
-		}, 0, Long.valueOf(System.getProperty("sun.rmi.dgc.checkInterval", String.valueOf(factory.client.lease >> 1))));
+		}, 0, Long.valueOf(System.getProperty("sun.rmi.dgc.checkInterval", String.valueOf(factory.lease >> 1))));
 		started = true;
 	}
 
@@ -53,7 +53,11 @@ public class DGC {
 		return dirty(new Long[] {num}, id, duration);
 	}
 
-	public boolean dirty(final Long nums[], final String id, final long duration) {
+	public boolean manage(final Long ds[], final Long cs[], final String id, final long duration) {
+		return dirty(ds, id, duration) & clean(cs, id);
+	}
+
+	private boolean dirty(final Long nums[], final String id, final long duration) {
 		final long t = System.currentTimeMillis() + duration;
 		boolean c = true;
 		for (final long num : nums) {
@@ -68,7 +72,7 @@ public class DGC {
 		return c;
 	}
 
-	public boolean clean(final Long nums[], final String id) {
+	private boolean clean(final Long nums[], final String id) {
 		boolean c = true;
 		for (final long num : nums) {
 			if (num > 1) {
