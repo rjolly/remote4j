@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
@@ -18,6 +19,7 @@ import javax.websocket.server.ServerEndpoint;
 
 @ServerEndpoint("/mediator")
 public class Endpoint {
+	private final Logger logger = Logger.getLogger(getClass().getName());
 	private Map<String, Session> map;
 	private String id;
 
@@ -45,6 +47,8 @@ public class Endpoint {
 				final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream());
 				oos.writeObject(id);
 				oos.writeObject(obj);
+			} else {
+				throw new RemoteException("not found " + recipientId);
 			}
 		} catch (final ClassNotFoundException e) {
 			throw new RemoteException("deserialization error", e);
@@ -58,6 +62,6 @@ public class Endpoint {
 
 	@OnError
 	public void onError(final Throwable t) {
-		t.printStackTrace();
+		logger.info(t.toString());
 	}
 }
