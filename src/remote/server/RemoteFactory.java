@@ -134,7 +134,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		apply(new HashMap<String, Remote<?>>(), 0);
 	}
 
-	final Remote<Map<String, Remote<?>>> registry = new RemoteImpl_Stub<>(getRegistryId(), 0, this);
+	@SuppressWarnings("unchecked")
+	final Remote<Map<String, Remote<?>>> registry = (Remote<Map<String, Remote<?>>>) replace(new RemoteImpl_Stub<>(getRegistryId(), 0, this));
 
 	protected RemoteFactory(final URI uri) {
 		apply(dgc, 1);
@@ -155,7 +156,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	<T> Remote<T> apply(final T value, final long num) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
-		dgc.dirty(num, getId(), lease);
+		dgc.dirty(num);
 		objs.put(num, obj);
 		return obj;
 	}
@@ -174,6 +175,10 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	void clean(final RemoteImpl_Stub<?> obj) {
 		clients.get(obj.getId()).clean(obj.getNum());
+	}
+
+	void release(final String id) {
+		clients.remove(id);
 	}
 
 	public <T> void rebind(final String name, final T value) throws RemoteException {

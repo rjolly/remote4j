@@ -46,11 +46,11 @@ public class DGC {
 		}
 	}
 
-	boolean dirty(final long num, final String id, final long duration) {
+	boolean dirty(final long num) {
 		if (num != 1 && !started) {
 			start();
 		}
-		return dirty(new Long[] {num}, id, duration);
+		return dirty(new Long[] {num}, factory.getId(), factory.lease);
 	}
 
 	public boolean manage(final Long ds[], final Long cs[], final String id, final long duration) {

@@ -16,11 +16,12 @@ import remote.Remote;
 
 public class DGCClient {
 	private final Remote<DGC> dgc;
+	private final Timer timer = new Timer(true);
 	private final Collection<Long> collected = Collections.synchronizedSet(new LinkedHashSet<>());
 	private final Collection<Long> live = Collections.synchronizedSet(new LinkedHashSet<>());
 	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
 	private final RemoteFactory factory;
-	private Timer timer = new Timer(true);
+	private final String id;
 
 	static {
 		(new Timer(true)).schedule(new TimerTask() {
@@ -41,6 +42,7 @@ public class DGCClient {
 			}
 		}, n, n);
 		this.factory = factory;
+		this.id = id;
 	}
 
 	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
@@ -78,6 +80,7 @@ public class DGCClient {
 			collected.removeAll(Arrays.asList(cs));
 		} else {
 			timer.cancel();
+			factory.release(id);
 		}
 	}
 }
