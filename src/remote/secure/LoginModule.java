@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.security.Principal;
+import java.util.Collection;
 import java.util.Map;
 import java.util.logging.Logger;
 import javax.security.auth.Subject;
@@ -16,7 +18,7 @@ import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import remote.Remote;
 import remote.RemoteFactory;
-import secure.Principal;
+import secure.Authenticator;
 
 public class LoginModule implements javax.security.auth.spi.LoginModule {
 	// initial state
@@ -37,8 +39,8 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 	private String username;
 	private char[] password;
 
-	// testUser's Principal
-	private Principal userPrincipal;
+	// User's principals
+	private Collection<Principal> userPrincipals;
 
 	public void initialize(final Subject subject, final CallbackHandler callbackHandler, final Map<String, ?> sharedState, final Map<String, ?> options) {
 		this.subject = subject;
@@ -99,7 +101,8 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		// verify the username/password
 		boolean usernameCorrect = false;
 		boolean passwordCorrect = false;
-		if(authenticate(username, password)) {
+		userPrincipals = authenticate(username, password);
+		if(userPrincipals != null && !userPrincipals.isEmpty()) {
 			usernameCorrect = true;
 			// authentication succeeded!!!
 			passwordCorrect = true;
@@ -131,7 +134,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		}
 	}
 
-	private boolean authenticate(final String username, final char[] password) throws LoginException {
+	private Collection<Principal> authenticate(final String username, final char[] password) throws LoginException {
 		try {
 			return auth.map(a -> a.authenticate(username, password)).get();
 		} catch (final RemoteException e) {
@@ -143,15 +146,13 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		if (succeeded == false) {
 			return false;
 		} else {
-			// add a Principal (authenticated identity)
+			// add Principals (authenticated identity)
 			// to the Subject
-			userPrincipal = new Principal(username);
-			if (!subject.getPrincipals().contains(userPrincipal)) {
-				subject.getPrincipals().add(userPrincipal);
-			}
+			userPrincipals.removeAll(subject.getPrincipals());
+			subject.getPrincipals().addAll(userPrincipals);
 			if (debug) {
 				System.out.println("\t\t[" + getClass().getSimpleName() + "] " +
-					"added Principal to Subject");
+					"added Principals to Subject");
 			}
 			// in any case, clean out state
 			username = null;
@@ -177,7 +178,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 				}
 				password = null;
 			}
-			userPrincipal = null;
+			userPrincipals = null;
 		} else {
 			// overall authentication succeeded and commit succeeded,
 			// but someone else's commit failed
@@ -187,7 +188,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 	}
 
 	public boolean logout() throws LoginException {
-		subject.getPrincipals().remove(userPrincipal);
+		subject.getPrincipals().removeAll(userPrincipals);
 		succeeded = false;
 		succeeded = commitSucceeded;
 		username = null;
@@ -197,7 +198,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 			}
 			password = null;
 		}
-		userPrincipal = null;
+		userPrincipals = null;
 		return true;
 	}
 }

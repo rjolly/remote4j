@@ -1,12 +1,14 @@
 package secure;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 
-public class DummyLoginModule implements LoginModule {
+public class DummyLoginModule implements LoginModule, Authenticator {
 	// initial state
 	private Subject subject;
 	private CallbackHandler callbackHandler;
@@ -25,8 +27,8 @@ public class DummyLoginModule implements LoginModule {
 	private String username;
 	private char[] password;
 
-	// testUser's Principal
-	private Principal userPrincipal;
+	// User's principals
+	private Collection<java.security.Principal> userPrincipals;
 
 	public void initialize(final Subject subject, final CallbackHandler callbackHandler, final Map sharedState, final Map options) {
 		this.subject = subject;
@@ -42,33 +44,33 @@ public class DummyLoginModule implements LoginModule {
 	public boolean login() throws LoginException {
 		username = user;
 		password = new char[0];
-		succeeded = true;
+		userPrincipals = authenticate(username, password);
+		succeeded = userPrincipals != null && !userPrincipals.isEmpty();
 		return true;
+	}
+
+	public Collection<java.security.Principal> authenticate(final String username, final char[] password) {
+		return Arrays.asList(new Principal(user));
 	}
 
 	public boolean commit() throws LoginException {
 		if (succeeded == false) {
 			return false;
 		} else {
-			// add a Principal (authenticated identity)
+			// add Principals (authenticated identity)
 			// to the Subject
-
-			userPrincipal = new Principal(username);
-			if (!subject.getPrincipals().contains(userPrincipal)) {
-				subject.getPrincipals().add(userPrincipal);
-			}
-
+			userPrincipals.removeAll(subject.getPrincipals());
+			subject.getPrincipals().addAll(userPrincipals);
 			if (debug) {
-				System.out.println("\t\t[DummyLoginModule] " + "added Principal to Subject");
+				System.out.println("\t\t[" + getClass().getSimpleName() + "] " +
+					"added Principals to Subject");
 			}
-
 			// in any case, clean out state
 			username = null;
 			for (int i = 0; i < password.length; i++) {
 				password[i] = ' ';
 			}
 			password = null;
-
 			commitSucceeded = true;
 			return true;
 		}
@@ -87,7 +89,7 @@ public class DummyLoginModule implements LoginModule {
 				}
 				password = null;
 			}
-			userPrincipal = null;
+			userPrincipals = null;
 		} else {
 			// overall authentication succeeded and commit succeeded,
 			// but someone else's commit failed
@@ -97,7 +99,7 @@ public class DummyLoginModule implements LoginModule {
 	}
 
 	public boolean logout() throws LoginException {
-		subject.getPrincipals().remove(userPrincipal);
+		subject.getPrincipals().removeAll(userPrincipals);
 		succeeded = false;
 		succeeded = commitSucceeded;
 		username = null;
@@ -107,7 +109,7 @@ public class DummyLoginModule implements LoginModule {
 			}
 			password = null;
 		}
-		userPrincipal = null;
+		userPrincipals = null;
 		return true;
 	}
 }
