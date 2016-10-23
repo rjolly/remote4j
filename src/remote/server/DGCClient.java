@@ -74,13 +74,12 @@ public class DGCClient {
 					a.manage(ds, cs, id, duration);
 					return Remote.VOID;
 				});
+				collected.removeAll(Arrays.asList(cs));
+				return;
 			} catch (final RemoteException e) {
-				factory.logger.info(e.toString());
 			}
-			collected.removeAll(Arrays.asList(cs));
-		} else {
-			timer.cancel();
-			factory.release(id);
 		}
+		timer.cancel();
+		factory.release(id);
 	}
 }

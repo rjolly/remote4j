@@ -34,7 +34,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final AtomicLong nextObjNum = new AtomicLong(2);
 	private final AtomicLong nextCallId = new AtomicLong(0);
 	private DGC dgc;
-	final Logger logger = Logger.getLogger(getClass().getName());
+	private final Logger logger = Logger.getLogger(getClass().getName());
 	private final ExecutorService executor = Executors.newCachedThreadPool();
 	private final URI uri;
 
