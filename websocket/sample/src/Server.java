@@ -13,5 +13,6 @@ public class Server {
 			}
 		});
 		System.out.println("obj bound in registry");
+		new java.util.concurrent.CountDownLatch(1).await();
 	}
 }

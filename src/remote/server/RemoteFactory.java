@@ -135,7 +135,14 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	final Remote<Map<String, Remote<?>>> registry = (Remote<Map<String, Remote<?>>>) replace(new RemoteImpl_Stub<>(getRegistryId(), 0, this));
+	private Remote<Map<String, Remote<?>>> getRegistry() {
+		if (registry == null) {
+			registry = (Remote<Map<String, Remote<?>>>) replace(new RemoteImpl_Stub<>(getRegistryId(), 0, this));
+		}
+		return registry;
+	}
+
+	private Remote<Map<String, Remote<?>>> registry;
 
 	protected RemoteFactory(final URI uri) {
 		this.uri = uri;
@@ -185,12 +192,12 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	public <T> void rebind(final String name, final T value) throws RemoteException {
 		final Remote<T> obj = apply(value);
-		registry.flatMap(a -> a.put(name, obj));
+		getRegistry().flatMap(a -> a.put(name, obj));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <T> Remote<T> lookup(final String name) throws RemoteException {
-		return registry.flatMap(a -> (Remote<T>) a.get(name));
+		return getRegistry().flatMap(a -> (Remote<T>) a.get(name));
 	}
 
 	public <T> boolean unexport(final Remote<T> obj) {
