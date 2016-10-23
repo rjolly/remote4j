@@ -33,7 +33,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Random random = new SecureRandom();
 	private final AtomicLong nextObjNum = new AtomicLong(2);
 	private final AtomicLong nextCallId = new AtomicLong(0);
-	private final DGC dgc = new DGC(this);
+	private DGC dgc;
 	final Logger logger = Logger.getLogger(getClass().getName());
 	private final ExecutorService executor = Executors.newCachedThreadPool();
 	private final URI uri;
@@ -138,7 +138,6 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	final Remote<Map<String, Remote<?>>> registry = (Remote<Map<String, Remote<?>>>) replace(new RemoteImpl_Stub<>(getRegistryId(), 0, this));
 
 	protected RemoteFactory(final URI uri) {
-		apply(dgc, 1);
 		this.uri = uri;
 	}
 
@@ -156,6 +155,9 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 
 	<T> Remote<T> apply(final T value, final long num) {
 		final RemoteImpl<T> obj = new RemoteImpl<>(value, this, num);
+		if (dgc == null) {
+			apply(dgc = new DGC(this), 1);
+		}
 		dgc.dirty(num);
 		objs.put(num, obj);
 		return obj;
@@ -207,7 +209,9 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	private void release() {
-		dgc.stop();
+		if (dgc != null) {
+			dgc.stop();
+		}
 		executor.shutdown();
 	}
 }
