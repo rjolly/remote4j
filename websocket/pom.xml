@@ -6,7 +6,7 @@
   <groupId>com.github.rjolly</groupId>
   <artifactId>remote4j-websocket</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.1</version>
+  <version>1.2</version>
   <url>http://github.com/rjolly/remote4j/</url>
   <description>Thin functional layer on top of RMI.</description>
   <licenses>
@@ -34,7 +34,7 @@
     <dependency>
       <groupId>com.github.rjolly</groupId>
       <artifactId>remote4j</artifactId>
-      <version>1.1</version>
+      <version>1.2</version>
     </dependency>
     <dependency>
       <groupId>javax.websocket</groupId>

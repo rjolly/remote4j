@@ -104,7 +104,7 @@ Then just run the server and client classes in turn:
 
 
 To use in your project:
-  add com.github.rjolly#remote4j;1.1 to your dependencies
+  add com.github.rjolly#remote4j;1.2 to your dependencies
 
 
 Web applications
@@ -121,7 +121,7 @@ To install and run:
 
 
 To use the websocket mediator:
-  add com.github.rjolly#remote4j-websocket;1.1.1 to your dependencies
+  add com.github.rjolly#remote4j-websocket;1.2 to your dependencies
 
 
 Then, on the server side, instead of:
@@ -155,7 +155,7 @@ https://github.com/rjolly/remote4j/tree/master/channel/mediator
 
 
 To use the channel mediator:
-  add com.github.rjolly#remote4j-channel;1.1 to your dependencies
+  add com.github.rjolly#remote4j-channel;1.2 to your dependencies
 
 
 To set the channel mediator address:
