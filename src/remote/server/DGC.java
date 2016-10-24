@@ -6,9 +6,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import remote.Remote;
 
 public class DGC {
 	private Timer timer = new Timer();
+	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Map<String, Long>> leases = Collections.synchronizedMap(new HashMap<>());
 	private final RemoteFactory factory;
 
@@ -24,7 +26,7 @@ public class DGC {
 
 	void check() {
 		final long t0 = System.currentTimeMillis();
-		for (final long num : factory.getObjects()) {
+		for (final long num : objs.keySet().toArray(new Long[0])) {
 			if (num > 1) {
 				final Map<String, Long> map = leases.get(num);
 				for (final String id : map.keySet().toArray(new String[0])) {
@@ -34,15 +36,31 @@ public class DGC {
 					}
 				}
 				if (map.isEmpty()) {
-					leases.remove(num);
-					factory.remove(num);
+					remove(num);
 				}
 			}
 		}
 	}
 
-	boolean dirty(final long num) {
-		return dirty(new Long[] {num}, factory.getId(), factory.lease);
+	Remote<?> remove(final long num) {
+		leases.remove(num);
+		final Remote<?> obj = objs.remove(num);
+		if (objs.size() == 1) {
+			timer.cancel();
+			factory.release();
+		}
+		return obj;
+	}
+
+	<T> boolean dirty(final RemoteImpl<T> obj) {
+		final long num = obj.getNum();
+		final boolean c = dirty(new Long[] {num}, factory.getId(), factory.lease);
+		objs.put(num, obj);
+		return c;
+	}
+
+	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
+		return objs.get(obj.getNum());
 	}
 
 	public boolean manage(final Long ds[], final Long cs[], final String id, final long duration) {
@@ -71,15 +89,10 @@ public class DGC {
 				final Map<String, Long> map = leases.get(num);
 				c = c & map.remove(id) != null;
 				if (map.isEmpty()) {
-					leases.remove(num);
-					factory.remove(num);
+					remove(num);
 				}
 			}
 		}
 		return c;
-	}
-
-	void stop() {
-		timer.cancel();
 	}
 }

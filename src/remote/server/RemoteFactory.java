@@ -29,7 +29,6 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, CountDownLatch> latches = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Throwable> exceptions = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Object> returns = Collections.synchronizedMap(new HashMap<>());
-	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Reference<Remote<?>>> cache = Collections.synchronizedMap(new WeakHashMap<>());
 	private final Map<String, DGCClient> clients = Collections.synchronizedMap(new HashMap<>());
 	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
@@ -156,10 +155,6 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return uri;
 	}
 
-	Long[] getObjects() {
-		return objs.keySet().toArray(new Long[0]);
-	}
-
 	private long nextObjNum() {
 		return secure?random.nextLong():nextObjNum.getAndIncrement();
 	}
@@ -173,15 +168,14 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		if (dgc == null) {
 			apply(dgc = new DGC(this), 1);
 		}
-		dgc.dirty(num);
-		objs.put(num, obj);
+		dgc.dirty(obj);
 		cache.put(obj.getNum(), new WeakReference<>(obj));
 		return obj;
 	}
 
 	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
 		final String id = obj.getId();
-		return id.equals(getId())?objs.get(obj.getNum()):getClient(id).cache(obj);
+		return id.equals(getId())?dgc.replace(obj):getClient(id).cache(obj);
 	}
 
 	private DGCClient getClient(final String id) {
@@ -210,24 +204,10 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	public <T> boolean unexport(final Remote<T> obj) {
-		if (obj instanceof RemoteObject) {
-			return remove(((RemoteObject) obj).getNum()) != null;
-		}
-		return false;
+		return obj instanceof RemoteObject?dgc.remove(((RemoteObject) obj).getNum()) != null:false;
 	}
 
-	Remote<?> remove(final long num) {
-		final Remote<?> obj = objs.remove(num);
-		if (objs.size() == 1) {
-			release();
-		}
-		return obj;
-	}
-
-	private void release() {
-		if (dgc != null) {
-			dgc.stop();
-		}
+	void release() {
 		executor.shutdown();
 	}
 }
