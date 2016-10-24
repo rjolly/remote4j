@@ -19,7 +19,7 @@ public class DGCClient {
 	private final Timer timer = new Timer(true);
 	private final Collection<Long> collected = Collections.synchronizedSet(new LinkedHashSet<>());
 	private final Collection<Long> live = Collections.synchronizedSet(new LinkedHashSet<>());
-	private final Map<RemoteObject, Reference<Remote<?>>> cache = new WeakHashMap<>();
+	private final Map<Long, Reference<Remote<?>>> cache = new WeakHashMap<>();
 	private final RemoteFactory factory;
 	private final String id;
 
@@ -47,10 +47,11 @@ public class DGCClient {
 
 	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
 		final Remote<?> o;
-		final Reference<Remote<?>> w = cache.get(obj);
+		final Long num = obj.getNum();
+		final Reference<Remote<?>> w = cache.get(num);
 		if (w == null || (o = w.get()) == null) {
-			cache.put(obj, new WeakReference<>(obj));
-			live.add(obj.getNum());
+			cache.put(num, new WeakReference<>(obj));
+			live.add(num);
 			obj.state = true;
 			return obj;
 		} else {
