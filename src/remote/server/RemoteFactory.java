@@ -26,7 +26,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, CountDownLatch> latches = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Throwable> exceptions = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Object> returns = Collections.synchronizedMap(new HashMap<>());
-	final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
+	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
 	private final Map<String, DGCClient> clients = Collections.synchronizedMap(new HashMap<>());
 	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
 	final long lease = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
@@ -152,6 +152,10 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return uri;
 	}
 
+	Long[] getObjects() {
+		return objs.keySet().toArray(new Long[0]);
+	}
+
 	private long nextObjNum() {
 		return secure?random.nextLong():nextObjNum.getAndIncrement();
 	}
@@ -171,15 +175,15 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	Remote<?> replace(final RemoteImpl_Stub<?> obj) {
-		return obj.getId().equals(getId()) ? objs.get(obj.getNum()) : cache(obj);
+		final String id = obj.getId();
+		return id.equals(getId())?objs.get(obj.getNum()):getClient(id).cache(obj);
 	}
 
-	private Remote<?> cache(final RemoteImpl_Stub<?> obj) {
-		final String id = obj.getId();
+	private DGCClient getClient(final String id) {
 		if (!clients.containsKey(id)) {
 			clients.put(id, new DGCClient(this, id));
 		}
-		return clients.get(id).cache(obj);
+		return clients.get(id);
 	}
 
 	void clean(final RemoteImpl_Stub<?> obj) {

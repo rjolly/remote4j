@@ -24,7 +24,7 @@ public class DGC {
 
 	void check() {
 		final long t0 = System.currentTimeMillis();
-		for (final long num : factory.objs.keySet().toArray(new Long[0])) {
+		for (final long num : factory.getObjects()) {
 			if (num > 1) {
 				final Map<String, Long> map = leases.get(num);
 				for (final String id : map.keySet().toArray(new String[0])) {
