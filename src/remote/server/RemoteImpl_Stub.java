@@ -60,7 +60,7 @@ public class RemoteImpl_Stub<T> extends RemoteObject implements Remote<T>, Seria
 	@Override
 	protected void finalize() {
 		if (state) {
-			factory.clean(this);
+			factory.release(this);
 		}
 	}
 }

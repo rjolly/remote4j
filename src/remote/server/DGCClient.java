@@ -16,12 +16,10 @@ import remote.Remote;
 
 public class DGCClient {
 	private final Remote<DGC> dgc;
-	private final Timer timer = new Timer(true);
 	private final Collection<Long> collected = Collections.synchronizedSet(new LinkedHashSet<>());
 	private final Collection<Long> live = Collections.synchronizedSet(new LinkedHashSet<>());
 	private final Map<Long, Reference<Remote<?>>> cache = new WeakHashMap<>();
 	private final RemoteFactory factory;
-	private final String id;
 
 	static {
 		(new Timer(true)).schedule(new TimerTask() {
@@ -35,14 +33,17 @@ public class DGCClient {
 	DGCClient(final RemoteFactory factory, final String id) {
 		dgc = new RemoteImpl_Stub<>(id, 1, factory);
 		final long n = factory.lease >> 1;
+		final Timer timer = new Timer(true);
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				gc();
+				if (!gc()) {
+					factory.remove(id);
+					timer.cancel();
+				}
 			}
 		}, n, n);
 		this.factory = factory;
-		this.id = id;
 	}
 
 	Remote<?> cache(final RemoteImpl_Stub<?> obj) {
@@ -59,12 +60,12 @@ public class DGCClient {
 		}
 	}
 
-	void clean(final long num) {
+	void release(final long num) {
 		collected.add(num);
 		live.remove(num);
 	}
 
-	void gc() {
+	boolean gc() {
 		if (live.size() > 0 || collected.size() > 0) {
 			final Long cs[] = collected.toArray(new Long[0]);
 			final Long ds[] = live.toArray(new Long[0]);
@@ -76,11 +77,10 @@ public class DGCClient {
 					return Remote.VOID;
 				});
 				collected.removeAll(Arrays.asList(cs));
-				return;
+				return true;
 			} catch (final RemoteException e) {
 			}
 		}
-		timer.cancel();
-		factory.release(id);
+		return false;
 	}
 }

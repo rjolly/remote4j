@@ -2,7 +2,6 @@ package remote.server;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -47,7 +46,6 @@ public class DGC {
 		final Remote<?> obj = objs.remove(num);
 		if (objs.size() == 1) {
 			timer.cancel();
-			factory.release();
 		}
 		return obj;
 	}

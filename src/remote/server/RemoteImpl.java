@@ -35,4 +35,9 @@ public class RemoteImpl<T> extends RemoteObject implements Remote<T>, Serializab
 	private Object writeReplace() throws ObjectStreamException {
 		return new RemoteImpl_Stub<>(factory.getId(), getNum(), factory);
 	}
+
+	@Override
+	protected void finalize() {
+		factory.release(this);
+	}
 }

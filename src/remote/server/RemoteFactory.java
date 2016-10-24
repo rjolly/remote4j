@@ -185,11 +185,11 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return clients.get(id);
 	}
 
-	void clean(final RemoteImpl_Stub<?> obj) {
-		clients.get(obj.getId()).clean(obj.getNum());
+	void release(final RemoteImpl_Stub<?> obj) {
+		clients.get(obj.getId()).release(obj.getNum());
 	}
 
-	void release(final String id) {
+	void remove(final String id) {
 		clients.remove(id);
 	}
 
@@ -207,7 +207,9 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return obj instanceof RemoteObject?dgc.remove(((RemoteObject) obj).getNum()) != null:false;
 	}
 
-	void release() {
-		executor.shutdown();
+	void release(final RemoteImpl<?> obj) {
+		if (cache.size() == 1) {
+			executor.shutdown();
+		}
 	}
 }
