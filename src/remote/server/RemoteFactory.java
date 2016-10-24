@@ -34,6 +34,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final AtomicLong nextObjNum = new AtomicLong(2);
 	private final AtomicLong nextCallId = new AtomicLong(0);
 	private DGC dgc;
+	private Remote<Registry> registry;
 	private final Logger logger = Logger.getLogger(getClass().getName());
 	private final ExecutorService executor = Executors.newCachedThreadPool();
 	private final URI uri;
@@ -131,18 +132,16 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	protected abstract String getRegistryId();
 
 	protected final void setRegistryId() {
-		apply(new HashMap<String, Remote<?>>(), 0);
+		apply(new Registry(), 0);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Remote<Map<String, Remote<?>>> getRegistry() {
+	private Remote<Registry> getRegistry() {
 		if (registry == null) {
-			registry = (Remote<Map<String, Remote<?>>>) replace(new RemoteImpl_Stub<>(getRegistryId(), 0, this));
+			registry = (Remote<Registry>) replace(new RemoteImpl_Stub<>(getRegistryId(), 0, this));
 		}
 		return registry;
 	}
-
-	private Remote<Map<String, Remote<?>>> registry;
 
 	protected RemoteFactory(final URI uri) {
 		this.uri = uri;
