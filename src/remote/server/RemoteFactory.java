@@ -5,6 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -14,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +30,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<Long, Throwable> exceptions = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Object> returns = Collections.synchronizedMap(new HashMap<>());
 	private final Map<Long, Remote<?>> objs = Collections.synchronizedMap(new HashMap<>());
+	private final Map<Long, Reference<Remote<?>>> cache = Collections.synchronizedMap(new WeakHashMap<>());
 	private final Map<String, DGCClient> clients = Collections.synchronizedMap(new HashMap<>());
 	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
 	final long lease = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
@@ -65,7 +69,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	protected abstract void send(final String id, final byte array[]) throws IOException;
 
 	private void process(final MethodCall call, final String id) throws IOException {
-		final Remote<?> target = objs.get(call.getNum());
+		final Reference<Remote<?>> w = cache.get(call.getNum());
+		final Remote<?> target = w == null?null:w.get();
 		try {
 			final Method method = Remote.class.getMethod(call.getName(), call.getTypes());
 			final Object value = method.invoke(target, call.getArgs());
@@ -170,6 +175,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		}
 		dgc.dirty(num);
 		objs.put(num, obj);
+		cache.put(obj.getNum(), new WeakReference<>(obj));
 		return obj;
 	}
 

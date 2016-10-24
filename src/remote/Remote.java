@@ -10,6 +10,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -22,7 +23,7 @@ public interface Remote<T> extends java.rmi.Remote {
 	public static final Factory factory = new Factory();
 
 	public static class Factory implements RemoteFactory {
-		private final Map<Remote<?>, Reference<Remote<?>>> cache = new WeakHashMap<>();
+		private final Map<Remote<?>, Reference<Remote<?>>> cache = Collections.synchronizedMap(new WeakHashMap<>());
 
 		public <T> Remote<T> apply(final T value) throws RemoteException {
 			if (value == VOID) {
@@ -36,7 +37,7 @@ public interface Remote<T> extends java.rmi.Remote {
 		Remote<?> replace(final Remote<?> obj) {
 			final Remote<?> o;
 			final Reference<Remote<?>> w = cache.get(obj);
-			return w == null || (o = w.get()) == null? obj : o;
+			return w == null || (o = w.get()) == null?obj:o;
 		}
 
 		public <T> void rebind(final String name, final T value) throws RemoteException, MalformedURLException {
