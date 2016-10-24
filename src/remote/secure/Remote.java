@@ -1,20 +1,19 @@
 package remote.secure;
 
+import java.io.Serializable;
 import java.rmi.RemoteException;
 import remote.Function;
 import secure.Secure;
 
-public class Remote<T> {
+public class Remote<T> implements Serializable {
 	private final remote.Remote<Secure<T>> value;
-	private final RemoteFactory factory;
 
-	Remote(final remote.Remote<Secure<T>> value, final RemoteFactory factory) {
+	Remote(final remote.Remote<Secure<T>> value) {
 		this.value = value;
-		this.factory = factory;
 	}
 
 	public <S> Remote<S> map(final Function<T, S> f) throws RemoteException {
-		return factory.apply(value.map(secure -> secure.map(t -> {
+		return new Remote<>(value.map(secure -> secure.map(t -> {
 			try {
 				return f.apply(t);
 			} catch (final RemoteException ex) {
@@ -24,7 +23,7 @@ public class Remote<T> {
 	}
 
 	public <S> Remote<S> flatMap(final Function<T, Remote<S>> f) throws RemoteException {
-		return factory.apply(value.flatMap(secure -> f.apply(secure.get()).value));
+		return new Remote<>(value.flatMap(secure -> f.apply(secure.get()).value));
 	}
 
 	public T get() throws RemoteException {

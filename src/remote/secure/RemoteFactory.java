@@ -28,15 +28,11 @@ public class RemoteFactory {
 		this.factory = factory;
 	}
 
-	<T> Remote<T> apply(final remote.Remote<Secure<T>> value) {
-		return new Remote<>(value, this);
-	}
-
 	public <T> Remote<T> lookup(final String name) throws IOException, NotBoundException {
 		final CallbackHandler handler = this.handler;
 		final Remote<T> obj;
 		try {
-			obj = apply(factory.<T>lookup(name).map(t -> {
+			obj = new Remote<>(factory.<T>lookup(name).map(t -> {
 				try {
 					return new SecureFactory(handler).apply(t);
 				} catch (final LoginException ex) {
