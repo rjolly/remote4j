@@ -185,7 +185,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 		return clients.get(id);
 	}
 
-	void release(final RemoteImpl_Stub<?> obj) {
+	<T> void release(final RemoteImpl_Stub<T> obj) {
 		clients.get(obj.getId()).release(obj.getNum());
 	}
 
@@ -204,10 +204,18 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	public <T> boolean unexport(final Remote<T> obj) {
-		return obj instanceof RemoteObject?dgc.remove(((RemoteObject) obj).getNum()) != null:false;
+		return obj instanceof RemoteImpl?unexport((RemoteImpl<T>) obj):false;
 	}
 
-	void release(final RemoteImpl<?> obj) {
+	private <T> boolean unexport(final RemoteImpl<T> obj) {
+		final long num = obj.getNum();
+		boolean c = dgc.remove(num) != null;
+		c = c | cache.remove(num) != null;
+		release(obj);
+		return c;
+	}
+
+	<T> void release(final RemoteImpl<T> obj) {
 		if (cache.size() == 1) {
 			executor.shutdown();
 		}
