@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+import remote.Registry;
 import remote.Remote;
 
 public abstract class RemoteFactory implements remote.RemoteFactory {
@@ -140,7 +141,7 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Remote<Registry> getRegistry() {
+	public Remote<Registry> getRegistry() {
 		if (registry == null) {
 			registry = (Remote<Registry>) replace(new RemoteImpl_Stub<>(getRegistryId(), 0, this));
 		}

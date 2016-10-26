@@ -46,11 +46,15 @@ public interface Remote<T> extends java.rmi.Remote {
 
 		@SuppressWarnings("unchecked")
 		public <T> Remote<T> lookup(final String name) throws MalformedURLException, RemoteException, NotBoundException {
-			return (Remote<T>)Naming.lookup(name);
+			return (Remote<T>) Naming.lookup(name);
 		}
 
 		public <T> boolean unexport(final Remote<T> obj) throws NoSuchObjectException {
 			return UnicastRemoteObject.unexportObject(obj, true);
+		}
+
+		public Remote<Registry> getRegistry() {
+			throw new UnsupportedOperationException();
 		}
 
 		public URI getURI() {

@@ -6,7 +6,11 @@ import javax.security.auth.login.LoginException;
 
 public class SecureFactory extends LoginContext {
 	public SecureFactory(final CallbackHandler handler) throws LoginException {
-		super("Secure", handler);
+		this("Secure", handler);
+	}
+
+	public SecureFactory(final String name, final CallbackHandler handler) throws LoginException {
+		super(name, handler);
 
 		int i;
 		for (i = 0; i < 3; i++) {

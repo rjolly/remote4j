@@ -8,41 +8,64 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
-import secure.SecureFactory;
 import secure.Secure;
+import secure.SecureFactory;
 
 public class RemoteFactory {
 	private final remote.RemoteFactory factory;
 	private final CallbackHandler handler;
 
-	public RemoteFactory(final CallbackHandler handler) throws IOException {
-		this(remote.Remote.factory, handler);
+	public static RemoteFactory apply(final CallbackHandler handler) throws IOException {
+		return new RemoteFactory(remote.Remote.factory, handler);
 	}
 
-	public RemoteFactory(final String str, final CallbackHandler handler) throws IOException, URISyntaxException {
-		this(remote.RemoteFactory.apply(str), handler);
+	public static RemoteFactory apply(final String str, final CallbackHandler handler) throws IOException, URISyntaxException {
+		return apply(str, handler, false);
 	}
 
-	private RemoteFactory(final remote.RemoteFactory factory, final CallbackHandler handler) throws IOException {
-		this.handler = new CallbackHandlerStub(factory, handler);
+	public static RemoteFactory apply(final String str, final CallbackHandler handler, final boolean secure) throws IOException, URISyntaxException {
+		final remote.RemoteFactory factory = remote.RemoteFactory.apply(str);
+		return secure?new SecureRemoteFactory(factory, handler):new RemoteFactory(factory, handler);
+	}
+
+	RemoteFactory(final remote.RemoteFactory factory, final CallbackHandler handler) throws IOException {
 		this.factory = factory;
+		this.handler = handler;
+	}
+
+	public <T> void rebind(final String name, final T value) throws IOException {
+		factory.rebind(name, value);
 	}
 
 	public <T> Remote<T> lookup(final String name) throws IOException, NotBoundException {
-		final CallbackHandler handler = this.handler;
+		final CallbackHandler handler = getHandler();
 		final Remote<T> obj;
 		try {
-			obj = new Remote<>(factory.<T>lookup(name).map(t -> {
-				try {
-					return new SecureFactory(handler).apply(t);
-				} catch (final LoginException ex) {
-					throw new RemoteException("login exception", ex);
-				}
-			}));
+			obj = lookup(name, handler);
 		} finally {
 			((CallbackHandlerStub) handler).unexport();
 		}
 		return obj;
+	}
+
+	protected <T> Remote<T> lookup(final String name, final CallbackHandler handler) throws IOException, NotBoundException {
+		return new Remote<>(factory.<T>lookup(name).map(t -> secure(t, handler)));
+	}
+
+	static <T> Secure<T> secure(final T value, final CallbackHandler handler) throws RemoteException {
+		try {
+			return new SecureFactory(handler).apply(value);
+		} catch (final LoginException ex) {
+			throw new RemoteException("login exception", ex);
+		}
+	}
+
+	final CallbackHandler getHandler() throws IOException {
+		return new CallbackHandlerStub(factory, handler);
+	}
+
+	final remote.RemoteFactory getFactory() {
+		return factory;
 	}
 }
 

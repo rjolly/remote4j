@@ -19,6 +19,7 @@ public interface RemoteFactory {
 	public <T> void rebind(String name, T value) throws IOException;
 	public <T> Remote<T> lookup(String name) throws IOException, NotBoundException;
 	public <T> boolean unexport(Remote<T> obj) throws NoSuchObjectException;
+	public Remote<Registry> getRegistry();
 	public URI getURI();
 
 	static final Map<URI, Reference<RemoteFactory>> cache = new WeakHashMap<>();
