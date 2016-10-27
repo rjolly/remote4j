@@ -1,0 +1,27 @@
+
+grant codebase "file:bin" {
+	permission java.net.SocketPermission "127.0.0.1:1099-", "connect,resolve";
+	permission java.util.PropertyPermission "sun.rmi.dgc.checkInterval", "read";
+	permission java.util.PropertyPermission "sun.rmi.dgc.client.gcInterval", "read";
+	permission java.util.PropertyPermission "java.rmi.server.randomIDs", "read";
+	permission java.util.PropertyPermission "java.rmi.dgc.leaseValue", "read";
+	permission java.util.PropertyPermission "weblogic.websocket.client.max-aio-threads", "read";
+	permission java.io.FilePermission "<<ALL FILES>>", "read";
+	permission java.net.NetPermission "getProxySelector";
+};
+
+grant codebase "file:lib/*" {
+	permission java.security.AllPermission;
+};
+
+grant codebase "file:../bin" {
+	permission java.security.AllPermission;
+};
+
+grant codebase "file:../lib/*" {
+	permission java.security.AllPermission;
+};
+
+grant codebase "file:../../bin" {
+	permission java.security.AllPermission;
+};

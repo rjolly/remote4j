@@ -1,0 +1,8 @@
+
+grant codebase "file:bin" {
+	permission java.security.AllPermission;
+};
+
+grant codebase "file:../bin" {
+	permission java.security.AllPermission;
+};
