@@ -34,6 +34,8 @@ public abstract class RemoteFactory implements remote.RemoteFactory {
 	private final Map<String, DGCClient> clients = Collections.synchronizedMap(new HashMap<>());
 	private final boolean secure = Boolean.valueOf(System.getProperty("java.rmi.server.randomIDs", "false"));
 	final long lease = Long.valueOf(System.getProperty("java.rmi.dgc.leaseValue", "600000"));
+	final long check = Long.valueOf(System.getProperty("sun.rmi.dgc.checkInterval", String.valueOf(lease >> 1)));
+	static final long gc = Long.valueOf(System.getProperty("sun.rmi.dgc.client.gcInterval", "3600000"));
 	private final Random random = new SecureRandom();
 	private final AtomicLong nextObjNum = new AtomicLong(2);
 	private final AtomicLong nextCallId = new AtomicLong(0);

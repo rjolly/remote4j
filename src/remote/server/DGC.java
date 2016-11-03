@@ -19,7 +19,7 @@ public class DGC {
 			public void run() {
 				check();
 			}
-		}, 0, Long.valueOf(System.getProperty("sun.rmi.dgc.checkInterval", String.valueOf(factory.lease >> 1))));
+		}, 0, factory.check);
 		this.factory = factory;
 	}
 

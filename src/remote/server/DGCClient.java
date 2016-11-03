@@ -27,7 +27,7 @@ public class DGCClient {
 			public void run() {
 				System.gc();
 			}
-		}, 0, Long.valueOf(System.getProperty("sun.rmi.dgc.client.gcInterval", "3600000")));
+		}, 0, RemoteFactory.gc);
 	}
 
 	DGCClient(final RemoteFactory factory, final String id) {
