@@ -25,3 +25,7 @@ grant codebase "file:../lib/*" {
 grant codebase "file:../../bin" {
 	permission java.security.AllPermission;
 };
+
+grant Principal secure.Principal "admin" {
+	permission java.util.PropertyPermission "test", "read";
+};
