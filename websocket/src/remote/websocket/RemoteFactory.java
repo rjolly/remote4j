@@ -5,6 +5,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.rmi.RemoteException;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.websocket.ClientEndpoint;
@@ -84,16 +87,25 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 
 		@OnMessage
 		public void onMessage(final java.io.InputStream is) throws IOException {
-			try (final ObjectInputStream ois = new ObjectInputStream(is)) {
-				final String senderId = (String) ois.readObject();
-				if (getId() == null) {
-					setId(senderId);
-					messageLatch.countDown();
-				} else {
-					receive(senderId, (byte[]) ois.readObject());
-				}
-			} catch (final ClassNotFoundException e) {
-				throw new RemoteException("deserialization error", e);
+			try {
+				AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+					public Void run() throws IOException {
+						try (final ObjectInputStream ois = new ObjectInputStream(is)) {
+							final String senderId = (String) ois.readObject();
+							if (getId() == null) {
+								setId(senderId);
+								messageLatch.countDown();
+							} else {
+								receive(senderId, (byte[]) ois.readObject());
+							}
+						} catch (final ClassNotFoundException e) {
+							throw new RemoteException("deserialization error", e);
+						}
+						return null;
+					}
+				});
+			} catch (final PrivilegedActionException e) {
+				throw (IOException) e.getException();
 			}
 		}
 	}
