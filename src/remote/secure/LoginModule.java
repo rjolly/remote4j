@@ -17,7 +17,6 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import remote.Remote;
-import remote.RemoteFactory;
 import secure.Authenticator;
 
 public class LoginModule implements javax.security.auth.spi.LoginModule {
@@ -28,7 +27,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 
 	// configurable option
 	private boolean debug;
-	private RemoteFactory factory;
+	private remote.RemoteFactory factory;
 	private Remote<Authenticator> auth;
 
 	// the authentication status
@@ -50,7 +49,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
 		final String str = (String) options.get("url");
 		final String name = (String) options.get("name");
 		try {
-			factory = str == null?Remote.factory:RemoteFactory.apply(str);
+			factory = str == null?Remote.factory:remote.RemoteFactory.apply(str);
 			auth = factory.lookup(name == null?"auth":name);
 		} catch (final IOException | URISyntaxException | NotBoundException e) {
 			logger.info(e.toString());
