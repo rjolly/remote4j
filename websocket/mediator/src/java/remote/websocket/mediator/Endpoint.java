@@ -1,6 +1,7 @@
 package remote.websocket.mediator;
 
 import java.io.IOException;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -32,20 +33,25 @@ public class Endpoint {
 		}
 		map = (Map<String, Session>) props.get("map");
 		id = map.isEmpty()?"00000000-0000-0000-0000-000000000000":session.getId();
-		final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
-		oos.writeObject(id);
+		try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
+			oos.writeObject(id);
+		}
 		map.put(id, session);
 	}
 
 	@OnMessage
 	public void onMessage(final InputStream is, final Session session) throws IOException {
 		try (final ObjectInputStream ois = new ObjectInputStream(is)) {
-			final String recipientId = (String)ois.readObject();
+			final String recipientId = (String) ois.readObject();
 			final Object obj = ois.readObject();
 			final Session recipient = map.containsKey(recipientId)?map.get(recipientId):session;
-			final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream());
-			oos.writeObject(id);
-			oos.writeObject(obj);
+			synchronized(recipient) {
+				try (final ObjectOutputStream oos = new ObjectOutputStream(recipient.getBasicRemote().getSendStream())) {
+					oos.writeObject(id);
+					oos.writeObject(obj);
+				}
+			}
+		} catch (final EOFException e) {
 		} catch (final ClassNotFoundException e) {
 			throw new RemoteException("deserialization error", e);
 		}

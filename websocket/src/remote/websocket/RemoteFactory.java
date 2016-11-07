@@ -1,6 +1,7 @@
 package remote.websocket;
 
 import java.io.IOException;
+import java.io.EOFException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
@@ -57,9 +58,10 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 
 	protected void send(final String id, final byte array[]) throws IOException {
 		synchronized(session) {
-			final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream());
-			oos.writeObject(id);
-			oos.writeObject(array);
+			try (final ObjectOutputStream oos = new ObjectOutputStream(session.getBasicRemote().getSendStream())) {
+				oos.writeObject(id);
+				oos.writeObject(array);
+			}
 		}
 	}
 
@@ -98,6 +100,7 @@ public class RemoteFactory extends remote.server.RemoteFactory {
 							} else {
 								receive(senderId, (byte[]) ois.readObject());
 							}
+						} catch (final EOFException e) {
 						} catch (final ClassNotFoundException e) {
 							throw new RemoteException("deserialization error", e);
 						}
