@@ -1,9 +1,9 @@
 
 Basic concept : move the code, not the data
 
-This projects brings functional programming to Java RMI. It introduces the Remote monad, a mechanism by which code can be sent to a target object as a closure and executed remotely (query shipping). In practice, the Remote monad is implemented as a remote object in the RMI sense. It is a wrapper to a normal Java object, whose type it is parametrized with. It exposes map and flatMap remote methods, with their function arguments.
+This projects brings together functional programming and Java RMI. It introduces the Remote monad, a mechanism by which code can be sent to a target object as a closure and executed remotely (query shipping). In practice, the Remote monad is implemented as a remote object in the RMI sense. It is a wrapper to a normal Java object, whose type it is parametrized with. It exposes map and flatMap remote methods, with their function arguments.
 
-This allows orthogonal remote invocation : you don't have to implement a Remote interface to make remote calls to your existing code, which is made readily accessible, unchanged. RMI is removed from your class hierarchies.
+This allows orthogonal remote invocation : you do not have to implement a Remote interface to make remote calls to your existing code, which is made readily accessible, unchanged. RMI is removed from your class hierarchies.
 
 
 Sample code
