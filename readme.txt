@@ -67,7 +67,7 @@ The object is added as an observer to a remote observable object:
 			return obs;
 		});
 
-The remote observable object is serializable, as it is sent as part of notifications to observers (*)
+(*) The remote observable object is serializable, as it is sent as part of notifications to observers
 
 		class MyObservable extends Observable implements Serializable {
 			public MyObservable() {
@@ -113,7 +113,7 @@ The standard technique to run RMI over the internet is HTTP tunneling, but it do
 
 
 To install and run:
-  wget http://raphael.jolly.free.fr/remote4j/websocket-mediator.zip
+  wget https://github.com/rjolly/remote4j/releases/download/1.2/websocket-mediator.zip
   mkdir mediator
   cd mediator
   unzip ../websocket-mediator.zip
@@ -169,3 +169,9 @@ To run the sample:
   run as java application : Server
   run as java application : Main
 
+
+Talks & papers
+
+R. Jolly. Monadic Remote Invocation. Technical Report, http://arxiv.org/abs/1708.03882, 2017
+
+Remote4J : monadic remote invocation for Java - Scala.io 2017, https://www.youtube.com/watch?v=MHTv1cy-8lE - slides : https://drive.google.com/open?id=1D7jxcZVAafwptoLF6Bsks03Q9ITtt-2v
