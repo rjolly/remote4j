@@ -1,7 +1,7 @@
 mkdir("bin");
 mkdir("doc");
 
-javac("src", "bin");
+javac("src", "bin", "1.8");
 javadoc("src", "doc");
 
 mkdir("dist");
